@@ -346,8 +346,6 @@ beta_sp_write( libspectrum_word port GCC_UNUSED, libspectrum_byte b )
   /* 0x08 = block hlt, normally set */
   wd_fdc_set_hlt( beta_fdc, ( ( b & 0x08 ) ? 1 : 0 ) );
   fdd_set_head( beta_fdc->current_drive, ( ( b & 0x10 ) ? 0 : 1 ) );
-  /* 0x20 = density, reset = FM, set = MFM */
-  beta_fdc->dden = b & 0x20 ? 1 : 0;
 
   beta_system_register = b;
 }
