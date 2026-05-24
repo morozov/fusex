@@ -140,13 +140,27 @@ static const periph_t beta128_pentagon_late = {
 
 static const periph_port_t pentagon1024_memory_ports[] = {
   { 0xc002, 0x4000, NULL, pentagon1024_memoryport_write  },
-  { 0xf008, 0xe000, NULL, pentagon1024_v22_memoryport_write }, /* v2.2 */
   { 0, 0, NULL, NULL }
 };
 
 static const periph_t pentagon1024_memory = {
   NULL,
   pentagon1024_memory_ports,
+  0,
+  NULL
+};
+
+/* Pentagon v2.2 #EFF7 extended port: video-mode and (on Pentagon 1024)
+   memory-extension bits. Split from pentagon1024_memory_ports so it can be
+   installed on Pentagon 128 and Pentagon 512 as well. */
+static const periph_port_t pentagon_eff7_ports[] = {
+  { 0xf008, 0xe000, NULL, pentagon1024_v22_memoryport_write },
+  { 0, 0, NULL, NULL }
+};
+
+static const periph_t pentagon_eff7 = {
+  NULL,
+  pentagon_eff7_ports,
   0,
   NULL
 };
@@ -162,6 +176,7 @@ machines_periph_init( void *context )
   periph_register( PERIPH_TYPE_BETA128_PENTAGON, &beta128_pentagon );
   periph_register( PERIPH_TYPE_BETA128_PENTAGON_LATE, &beta128_pentagon_late );
   periph_register( PERIPH_TYPE_PENTAGON1024_MEMORY, &pentagon1024_memory );
+  periph_register( PERIPH_TYPE_PENTAGON_EFF7, &pentagon_eff7 );
 
   return 0;
 }

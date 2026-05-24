@@ -474,6 +474,26 @@ memory_display_dirty_pentagon_16_col( libspectrum_word address,
     display_dirty_pentagon_16_col( offset2 );
 }
 
+/* Pentagon 512×192 monochrome. Both halves (primary at 0x0000-0x17FF and
+   alternate at 0x2000-0x37FF) of the current screen page provide pixel
+   data; attributes are unused. */
+void
+memory_display_dirty_pentagon_512_mono( libspectrum_word address,
+                                        libspectrum_byte b )
+{
+  libspectrum_word bank = address >> MEMORY_PAGE_SIZE_LOGARITHM;
+  memory_page *mapping = &memory_map_write[ bank ];
+  libspectrum_word offset = address & MEMORY_PAGE_SIZE_MASK;
+  libspectrum_byte *memory = mapping->page;
+  libspectrum_word offset2 = offset + mapping->offset;
+
+  if( mapping->source == memory_source_ram &&
+      mapping->page_num == memory_current_screen &&
+      ( offset2 & 0xdfff ) < 0x1800 &&
+      memory[ offset ] != b )
+    display_dirty_pentagon_512_mono( offset2 );
+}
+
 void
 memory_display_dirty_sinclair( libspectrum_word address, libspectrum_byte b ) \
 {

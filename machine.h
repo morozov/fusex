@@ -64,6 +64,16 @@ typedef struct fuse_machine_info {
   int (*reset)(void);	/* Reset function */
 
   int timex;      /* Timex machine (keyboard emulation/loading sounds etc.) */
+  int hires_video;/* Machine's signal is 16 pixels per source-cell column
+                     (Pentagon 512×192 mono via #EFF7 bit 0x02 and the
+                     existing 16-colour mode via bit 0x01). Causes
+                     machine_create_screen() to allocate a buffer with
+                     doubled width — one buffer row per source scanline,
+                     unlike the Timex pre-doubled layout — and UI
+                     putpixel/plot8/plot16 to expand X 2× while leaving Y
+                     alone. Y aspect correction happens at window-sizing
+                     time. Distinct from `timex` so non-Timex semantics
+                     (no SCLD, no dock, etc.) stay disabled. */
 
   machine_timings timings; /* How long do things take to happen? */
   /* Redraw line y this many tstates after interrupt */

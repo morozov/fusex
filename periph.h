@@ -63,6 +63,7 @@ typedef enum periph_type {
   PERIPH_TYPE_MULTIFACE_3,    /* Multiface 3 */
   PERIPH_TYPE_OPUS,           /* Opus disk interface */
   PERIPH_TYPE_PARALLEL_PRINTER, /* +2A/+3 parallel printer */
+  PERIPH_TYPE_PENTAGON_EFF7,  /* Pentagon v2.2 #EFF7 extended port */
   PERIPH_TYPE_PENTAGON1024_MEMORY, /* Pentagon 1024-style memory paging */
   PERIPH_TYPE_PLUS3_MEMORY,   /* +2A/+3-style memory paging */
   PERIPH_TYPE_SCLD,           /* Timex SCLD */

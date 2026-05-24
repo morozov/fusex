@@ -91,6 +91,7 @@ typedef void (*display_dirty_fn)( libspectrum_word offset );
 extern display_dirty_fn display_dirty;
 void display_dirty_timex( libspectrum_word offset );
 void display_dirty_pentagon_16_col( libspectrum_word offset );
+void display_dirty_pentagon_512_mono( libspectrum_word offset );
 void display_dirty_sinclair( libspectrum_word offset );
 
 typedef void (*display_write_if_dirty_fn)( int x, int y );
@@ -98,6 +99,7 @@ typedef void (*display_write_if_dirty_fn)( int x, int y );
 extern display_write_if_dirty_fn display_write_if_dirty;
 void display_write_if_dirty_timex( int x, int y );
 void display_write_if_dirty_pentagon_16_col( int x, int y );
+void display_write_if_dirty_pentagon_512_mono( int x, int y );
 void display_write_if_dirty_sinclair( int x, int y );
 
 typedef void (*display_dirty_flashing_fn)(void);
@@ -106,6 +108,7 @@ typedef void (*display_dirty_flashing_fn)(void);
 extern display_dirty_flashing_fn display_dirty_flashing;
 void display_dirty_flashing_timex(void);
 void display_dirty_flashing_pentagon_16_col(void);
+void display_dirty_flashing_pentagon_512_mono(void);
 void display_dirty_flashing_sinclair(void);
 
 void display_parse_attr( libspectrum_byte attr, libspectrum_byte *ink,

@@ -54,6 +54,7 @@ pentagon512_init( fuse_machine_info *machine )
   machine->reset = pentagon_reset;
 
   machine->timex = 0;
+  machine->hires_video = 1;  /* see pentagon.c for rationale */
   machine->ram.port_from_ula  = pentagon_port_from_ula;
   machine->ram.contend_delay  = spectrum_contend_delay_none;
   machine->ram.contend_delay_no_mreq = spectrum_contend_delay_none;
@@ -95,6 +96,9 @@ pentagon_reset(void)
 
   /* Earlier style Betadisk 128 interface */
   periph_set_present( PERIPH_TYPE_BETA128_PENTAGON, PERIPH_PRESENT_ALWAYS );
+
+  /* #EFF7 video-mode bits (16 colour, etc.) work on every Pentagon */
+  periph_set_present( PERIPH_TYPE_PENTAGON_EFF7, PERIPH_PRESENT_ALWAYS );
 
   periph_set_present( PERIPH_TYPE_COVOX_FB, PERIPH_PRESENT_OPTIONAL );
 

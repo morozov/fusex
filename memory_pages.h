@@ -200,6 +200,8 @@ void memory_display_dirty_sinclair( libspectrum_word address,
                                     libspectrum_byte b );
 void memory_display_dirty_pentagon_16_col( libspectrum_word address,
                                            libspectrum_byte b );
+void memory_display_dirty_pentagon_512_mono( libspectrum_word address,
+                                             libspectrum_byte b );
 
 typedef enum trap_type {
   CHECK_TAPE_ROM,

@@ -124,6 +124,11 @@ machine_add_machine( int (*init_function)( fuse_machine_info *machine ) )
   machine_types[ machine_count - 1 ] = libspectrum_new( fuse_machine_info, 1 );
   machine = machine_types[ machine_count - 1 ];
 
+  /* Defaults for fields that some init_functions may not set explicitly.
+     Without this, machines that omit `hires_video = 0` would inherit
+     uninitialized memory from libspectrum_new (it does not zero). */
+  machine->hires_video = 0;
+
   error = init_function( machine ); if( error ) return error;
 
   machine_set_const_timings( machine );
@@ -260,10 +265,17 @@ machine_select_machine( fuse_machine_info *machine )
 
   capabilities = libspectrum_machine_capabilities( machine->machine );
 
-  /* Set screen sizes here */
+  /* Set screen sizes here. The unscaled buffer represents the video signal
+     itself — one buffer row per source scanline. Hires modes double the
+     pixel count per scanline; Timex additionally pre-doubles the row count
+     for historical reasons. Aspect correction for non-square-pixel modes
+     happens at display time via the window's contentAspectRatio. */
   if( capabilities & LIBSPECTRUM_MACHINE_CAPABILITY_TIMEX_VIDEO ) {
     width = DISPLAY_SCREEN_WIDTH;
     height = 2*DISPLAY_SCREEN_HEIGHT;
+  } else if( machine->hires_video ) {
+    width = DISPLAY_SCREEN_WIDTH;
+    height = DISPLAY_SCREEN_HEIGHT;
   } else {
     width = DISPLAY_ASPECT_WIDTH;
     height = DISPLAY_SCREEN_HEIGHT;

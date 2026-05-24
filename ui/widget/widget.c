@@ -440,10 +440,11 @@ widget_down_arrow( int x, int y, int colour )
 void
 widget_display_rasters( int y, int h )
 {
-  int scale = machine_current->timex ? 2 : 1;
+  int sx = ( machine_current->timex || machine_current->hires_video ) ? 2 : 1;
+  int sy = machine_current->timex ? 2 : 1;
 
-  uidisplay_area( 0, scale * ( DISPLAY_BORDER_HEIGHT + y ),
-		  scale * DISPLAY_ASPECT_WIDTH, scale * h );
+  uidisplay_area( 0, sy * ( DISPLAY_BORDER_HEIGHT + y ),
+		  sx * DISPLAY_ASPECT_WIDTH, sy * h );
   uidisplay_frame_end();
 }
 

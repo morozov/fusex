@@ -282,6 +282,17 @@ display_dirty_pentagon_16_col( libspectrum_word offset )
 }
 
 void
+display_dirty_pentagon_512_mono( libspectrum_word offset )
+{
+  /* Same as 16-col: pixel bytes live in two 6144-byte regions of the screen
+     page, the primary at 0x0000-0x17FF and the alternate at 0x2000-0x37FF.
+     Both contribute to the same display column. Attributes are unused. */
+  if( offset >= 0x2000 ) offset -= ALTDFILE_OFFSET;
+  if( offset < 0x1800 )
+    display_dirty8( offset );
+}
+
+void
 display_dirty_sinclair( libspectrum_word offset )
 {
   if( offset >= 0x1b00 ) return;
@@ -514,6 +525,33 @@ display_write_if_dirty_pentagon_16_col( int x, int y )
     display_last_screen[ index ] = last_chunk_detail;
 
     /* And now mark it dirty */
+    display_is_dirty[ beam_y ] |= ( (libspectrum_qword)1 << beam_x );
+  }
+}
+
+/* Pentagon 512×192 monochrome. For each standard 8-pixel column the screen
+   page provides two bytes: the primary at the usual ZX-layout offset
+   (pixels 0-7 of the output 16-pixel chunk) and the alternate at the same
+   offset plus ALTDFILE_OFFSET (pixels 8-15). Both halves live in the same
+   screen page (RAM[memory_current_screen]); no attribute reads, fixed
+   white-on-black colour matching UnrealSpeccy's ATTR_512 = 0x07. */
+void
+display_write_if_dirty_pentagon_512_mono( int x, int y )
+{
+  int beam_x = x + DISPLAY_BORDER_WIDTH_COLS;
+  int beam_y = y + DISPLAY_BORDER_HEIGHT;
+  libspectrum_word offset = display_get_addr( x, y );
+  libspectrum_byte *screen = RAM[ memory_current_screen ];
+  libspectrum_byte data1 = screen[ offset ];                   /* pixels 0-7 */
+  libspectrum_byte data2 = screen[ offset + ALTDFILE_OFFSET ]; /* pixels 8-15 */
+  libspectrum_dword last_chunk_detail = ( data1 << 8 ) | data2;
+  int index = beam_x + beam_y * DISPLAY_SCREEN_WIDTH_COLS;
+
+  if( display_last_screen[ index ] != last_chunk_detail ) {
+    uidisplay_plot16( beam_x, beam_y,
+                      (libspectrum_word)last_chunk_detail, 7, 0 );
+
+    display_last_screen[ index ] = last_chunk_detail;
     display_is_dirty[ beam_y ] |= ( (libspectrum_qword)1 << beam_x );
   }
 }
@@ -821,7 +859,8 @@ static int border_pixel_buf[ DISPLAY_SCREEN_WIDTH ];
 static void
 flush_border_line( int y )
 {
-  const int pix_per_col = machine_current->timex ? 16 : 8;
+  const int pix_per_col =
+    ( machine_current->timex || machine_current->hires_video ) ? 16 : 8;
   const int pix_per_bit = pix_per_col / 8;
   /* On paper rows, skip the middle columns: the paper rendering path owns
      display_last_screen for those columns and would be overwritten otherwise. */
@@ -892,7 +931,8 @@ flush_border_line( int y )
 static void
 update_border( void )
 {
-  const int pix_per_col = machine_current->timex ? 16 : 8;
+  const int pix_per_col =
+    ( machine_current->timex || machine_current->hires_video ) ? 16 : 8;
   const int pix_per_tstate = pix_per_col / 4;
   const int line_pixels = DISPLAY_SCREEN_WIDTH_COLS * pix_per_col;
   struct border_change_t *end_sentinel;
@@ -941,7 +981,11 @@ static void
 update_ui_screen( void )
 {
   static int frame_count = 0;
-  int scale = machine_current->timex ? 2 : 1;
+  /* Hires source signals double the X count but, for hires_video, leave the
+     Y count at source resolution (one buffer row per source scanline).
+     Timex pre-doubles both. */
+  int sx = ( machine_current->timex || machine_current->hires_video ) ? 2 : 1;
+  int sy = machine_current->timex ? 2 : 1;
   size_t i;
   struct rectangle *ptr;
 
@@ -957,8 +1001,8 @@ update_ui_screen( void )
                         DISPLAY_SCREEN_HEIGHT );
       }
       uidisplay_area( 0, 0,
-                      scale * DISPLAY_ASPECT_WIDTH,
-                      scale * DISPLAY_SCREEN_HEIGHT );
+                      sx * DISPLAY_ASPECT_WIDTH,
+                      sy * DISPLAY_SCREEN_HEIGHT );
       display_redraw_all = 0;
     } else {
       for( i = 0, ptr = rectangle_inactive;
@@ -967,8 +1011,8 @@ update_ui_screen( void )
             if( movie_recording ) {
               movie_add_area( ptr->x, ptr->y, ptr->w, ptr->h );
             }
-              uidisplay_area( 8 * scale * ptr->x, scale * ptr->y,
-                        8 * scale * ptr->w, scale * ptr->h );
+              uidisplay_area( 8 * sx * ptr->x, sy * ptr->y,
+                        8 * sx * ptr->w, sy * ptr->h );
       }
     }
 
@@ -1039,6 +1083,12 @@ void
 display_dirty_flashing_pentagon_16_col(void)
 {
   /* No flash attribute in 16 colour mode */
+}
+
+void
+display_dirty_flashing_pentagon_512_mono(void)
+{
+  /* No flash attribute in 512×192 monochrome mode */
 }
 
 void

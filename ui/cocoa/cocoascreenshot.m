@@ -129,15 +129,21 @@ screenshot_write( const char *filename )
 
   if( machine_current->timex ) {
     base_height = 2 * DISPLAY_SCREEN_HEIGHT;
-    base_width = DISPLAY_SCREEN_WIDTH; 
-    base_height_offset = 0; 
-    base_width_offset = 0; 
+    base_width = DISPLAY_SCREEN_WIDTH;
+    base_height_offset = 0;
+    base_width_offset = 0;
+    icon_stride = DISPLAY_SCREEN_WIDTH * 3;
+  } else if( machine_current->hires_video ) {
+    base_height = DISPLAY_SCREEN_HEIGHT;
+    base_width = DISPLAY_SCREEN_WIDTH;
+    base_height_offset = 0;
+    base_width_offset = 0;
     icon_stride = DISPLAY_SCREEN_WIDTH * 3;
   } else {
     base_height = DISPLAY_SCREEN_HEIGHT;
     base_width = DISPLAY_SCREEN_WIDTH/2;
-    base_height_offset = 0; 
-    base_width_offset = 0 ; 
+    base_height_offset = 0;
+    base_width_offset = 0;
     icon_stride = DISPLAY_ASPECT_WIDTH * 3;
   }
 

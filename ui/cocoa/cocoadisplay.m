@@ -247,7 +247,12 @@ cocoadisplay_resize_window( void )
   if( !display_ui_initialised || !window_resize_enabled ) return;
 
   float factor = scaler_get_scaling_factor( current_scaler );
-  NSSize size = NSMakeSize( image_width * factor, image_height * factor );
+  /* hires_video buffer is not pre-doubled vertically; stretch the requested
+     window height 2x so the visible image lands at the same ~4:3 aspect as
+     lores and Timex machines. */
+  int y_aspect = machine_current->hires_video ? 2 : 1;
+  NSSize size = NSMakeSize( image_width * factor,
+                            image_height * y_aspect * factor );
 
   dispatch_async( dispatch_get_main_queue(), ^{
     NSWindow *win = [[DisplayOpenGLView instance] window];
@@ -394,6 +399,7 @@ uidisplay_putpixel( int x, int y, int colour )
   uint16_t palette_colour = palette_values[ colour ];
 
   if( machine_current->timex ) {
+    /* Timex: 2x2 expansion (buffer is doubled in both axes). */
     x <<= 1; y <<= 1;
     dest_base = dest = (uint16_t*)( (uint8_t*)unscaled_screen.pixels +
                                     (x+unscaled_screen.image_xoffset) * sizeof(uint16_t) +
@@ -402,6 +408,15 @@ uidisplay_putpixel( int x, int y, int colour )
     *(dest++) = palette_colour;
     *(dest  ) = palette_colour;
     dest = (uint16_t*)( (uint8_t*)dest_base + unscaled_screen.pitch );
+    *(dest++) = palette_colour;
+    *(dest  ) = palette_colour;
+  } else if( machine_current->hires_video ) {
+    /* Hires source signal in a non-pre-doubled buffer: 2x1 expansion
+       (one buffer row per source scanline; aspect handled at display). */
+    x <<= 1;
+    dest = (uint16_t*)( (uint8_t*)unscaled_screen.pixels +
+                        (x+unscaled_screen.image_xoffset) * sizeof(uint16_t) +
+                        (y+unscaled_screen.image_yoffset) * unscaled_screen.pitch );
     *(dest++) = palette_colour;
     *(dest  ) = palette_colour;
   } else {
@@ -426,6 +441,7 @@ uidisplay_plot8( int x, int y, libspectrum_byte data,
   uint16_t palette_paper = palette_values[ paper ];
 
   if( machine_current->timex ) {
+    /* Timex: 16x2 expansion (pre-doubled buffer). */
     int i;
     uint16_t *dest_base;
 
@@ -457,6 +473,29 @@ uidisplay_plot8( int x, int y, libspectrum_byte data,
 
       dest_base = (uint16_t*)( (uint8_t*)dest_base + unscaled_screen.pitch );
     }
+  } else if( machine_current->hires_video ) {
+    /* Hires source signal in a non-pre-doubled buffer: 16x1 expansion. */
+    x <<= 4;
+    dest = (uint16_t*)( (uint8_t*)unscaled_screen.pixels +
+                        (x+unscaled_screen.image_xoffset) * sizeof(uint16_t) +
+                        (y+unscaled_screen.image_yoffset) * unscaled_screen.pitch );
+
+    *(dest++) = ( data & 0x80 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x80 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x40 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x40 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x20 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x20 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x10 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x10 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x08 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x08 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x04 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x04 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x02 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x02 ) ? palette_ink : palette_paper;
+    *(dest++) = ( data & 0x01 ) ? palette_ink : palette_paper;
+    *dest     = ( data & 0x01 ) ? palette_ink : palette_paper;
   } else {
     x <<= 3;
     dest = (uint16_t*)( (uint8_t*)unscaled_screen.pixels +
@@ -481,17 +520,20 @@ uidisplay_plot16( int x, int y, libspectrum_word data,
 		  libspectrum_byte ink, libspectrum_byte paper )
 {
   uint16_t *dest_base, *dest;
-  int i; 
   uint16_t *palette_values = settings_current.bw_tv ? bw_values : colour_values;
   uint16_t palette_ink = palette_values[ ink ];
   uint16_t palette_paper = palette_values[ paper ];
-  x <<= 4; y <<= 1;
+  /* Timex pre-doubles the buffer vertically; hires_video does not. */
+  int rows = machine_current->timex ? 2 : 1;
+  int i;
+  x <<= 4;
+  if( machine_current->timex ) y <<= 1;
 
   dest_base = (uint16_t*)( (uint8_t*)unscaled_screen.pixels + (x+unscaled_screen.image_xoffset) *
                            sizeof(uint16_t) + (y+unscaled_screen.image_yoffset) *
                            unscaled_screen.pitch );
 
-  for( i=0; i<2; i++ ) {
+  for( i=0; i<rows; i++ ) {
     dest = dest_base;
 
     *(dest++) = ( data & 0x8000 ) ? palette_ink : palette_paper;

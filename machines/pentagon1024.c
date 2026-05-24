@@ -50,6 +50,7 @@ pentagon1024_init( fuse_machine_info *machine )
   machine->reset = pentagon1024_reset;
 
   machine->timex = 0;
+  machine->hires_video = 1;  /* see pentagon.c for rationale */
   machine->ram.port_from_ula  = pentagon_port_from_ula;
   machine->ram.contend_delay  = spectrum_contend_delay_none;
   machine->ram.contend_delay_no_mreq = spectrum_contend_delay_none;
@@ -99,6 +100,9 @@ pentagon1024_reset(void)
   periph_set_present( PERIPH_TYPE_128_MEMORY, PERIPH_PRESENT_NEVER );
   periph_set_present( PERIPH_TYPE_PENTAGON1024_MEMORY, PERIPH_PRESENT_ALWAYS );
 
+  /* #EFF7 video-mode bits (16 colour, etc.) work on every Pentagon */
+  periph_set_present( PERIPH_TYPE_PENTAGON_EFF7, PERIPH_PRESENT_ALWAYS );
+
   /* Later style Betadisk 128 interface */
   periph_set_present( PERIPH_TYPE_BETA128_PENTAGON_LATE, PERIPH_PRESENT_ALWAYS );
 
@@ -130,8 +134,18 @@ pentagon1024_v22_memoryport_write( libspectrum_word port GCC_UNUSED,
 {
   if( machine_current->ram.locked ) return;
 
+  libspectrum_byte prev = machine_current->ram.last_byte2;
   machine_current->ram.last_byte2 = b;
-  if( b & 0x01 ) {
+  /* Video-mode dispatch. Bits 0x01 (16-colour) and 0x02 (512×192 mono)
+     reinterpret the same screen RAM in incompatible ways; real software
+     sets at most one. 0x02 takes precedence so a future program that
+     mistakenly sets both still gets the wider mode. */
+  if( b & 0x02 ) {
+    display_dirty = display_dirty_pentagon_512_mono;
+    display_write_if_dirty = display_write_if_dirty_pentagon_512_mono;
+    display_dirty_flashing = display_dirty_flashing_pentagon_512_mono;
+    memory_display_dirty = memory_display_dirty_pentagon_512_mono;
+  } else if( b & 0x01 ) {
     display_dirty = display_dirty_pentagon_16_col;
     display_write_if_dirty = display_write_if_dirty_pentagon_16_col;
     display_dirty_flashing = display_dirty_flashing_pentagon_16_col;
@@ -139,6 +153,14 @@ pentagon1024_v22_memoryport_write( libspectrum_word port GCC_UNUSED,
   } else {
     spec48_common_display_setup();
   }
+  /* Different renderers encode display_last_screen entries differently
+     (the 16-colour quartet packs four screen bytes, 512 mono packs two,
+     Sinclair packs pixels+attr+mode), so an unchanged source byte can
+     yield a chunk_detail that compares equal to a stale entry from the
+     previous mode and skip the re-render. Force a full repaint whenever
+     the renderer bits change. */
+  if( ( prev ^ b ) & 0x03 )
+    display_refresh_all();
   machine_current->memory_map();
 }
 
