@@ -85,3 +85,25 @@ crc_udi( libspectrum_signed_dword crc, libspectrum_byte data )
   crc ^= (libspectrum_signed_dword)(-1);
   return crc;
 }
+
+/* As crc_udi(), but with an unsigned accumulator so the shift is logical, not
+   arithmetic. crc_udi()'s signed >>= 1 sign-extends once the high bit is set,
+   so the two diverge; that signed form is the de-facto UDI CRC (the references
+   name it udi_buggy_crc) and most images match it, but some converters wrote
+   the logical-shift CRC32 here instead. Callers that accept either tolerate
+   both conventions. */
+libspectrum_dword
+crc_udi_unsigned( libspectrum_dword crc, libspectrum_byte data )
+{
+  int i;
+  libspectrum_dword temp;
+
+  crc ^= (libspectrum_dword)0xffffffff ^ data;
+  for( i = 8; i > 0; i-- ) {
+    temp = -( crc & 1 );
+    crc >>= 1;
+    crc ^= (libspectrum_dword)0xedb88320 & temp;
+  }
+  crc ^= (libspectrum_dword)0xffffffff;
+  return crc;
+}

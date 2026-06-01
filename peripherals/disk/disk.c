@@ -1029,19 +1029,25 @@ open_udi( buffer_t *buffer, disk_t *d )
 {
   int i, bpt, ttyp, tlen, error;
   size_t eof;
-  libspectrum_dword crc;
+  libspectrum_dword crc, crc_alt, stored;
 
   crc = ~(libspectrum_dword) 0;
+  crc_alt = ~(libspectrum_dword) 0;
 
   /* check file length */
   eof = buff[4] + 256 * buff[5] + 65536 * buff[6] + 16777216 * buff[7];
   if( eof != buffer->file.length - 4 )
     return d->status = DISK_OPEN;
-  /* check CRC32 */
-  for( i = 0; i < eof; i++ )
+  /* check CRC32: accept either the de-facto signed-shift UDI CRC or the
+     logical-shift CRC32, since converters have written both. Reject only when
+     the stored value matches neither, which still catches a corrupt image. */
+  for( i = 0; i < eof; i++ ) {
     crc = crc_udi( crc, buff[i] );
-  if( crc != buff[eof] + 256 * buff[eof + 1] + 65536 * buff[eof + 2] +
-						16777216 * buff[eof + 3] )
+    crc_alt = crc_udi_unsigned( crc_alt, buff[i] );
+  }
+  stored = buff[eof] + 256 * buff[eof + 1] + 65536 * buff[eof + 2] +
+						16777216 * buff[eof + 3];
+  if( crc != stored && crc_alt != stored )
     return d->status = DISK_OPEN;
 
   d->sides = buff[10] + 1;
