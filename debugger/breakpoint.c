@@ -196,7 +196,7 @@ breakpoint_add( debugger_breakpoint_type type, debugger_breakpoint_value value,
 {
   debugger_breakpoint *bp;
 
-  bp = libspectrum_new( debugger_breakpoint, 1 );
+  bp = libspectrum_new0( debugger_breakpoint, 1 );
 
   bp->id = next_breakpoint_id++; bp->type = type;
   bp->value = value;
