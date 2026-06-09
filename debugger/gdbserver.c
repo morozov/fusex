@@ -175,6 +175,7 @@ struct action_set_registers_args_t {
 
 struct action_breakpoint_args_t {
     size_t maddr, mlen;
+    int type;          /* RSP Z/z type: 0,1 execute; 2 write; 3 read; 4 access */
 };
 
 void gdbserver_send_remote_console_output(const char *text)
@@ -595,7 +596,9 @@ uint8_t process_packet()
           
             struct action_breakpoint_args_t b;
             b.maddr = addr;
-          
+            b.mlen = length;
+            b.type = (int)type;
+
             if (gdbserver_execute_on_main_thread(action_set_breakpoint, &b, tmpbuf))
                 packet_send_message((const uint8_t*)tmpbuf, strlen((const char*)tmpbuf));
         
@@ -611,7 +614,9 @@ uint8_t process_packet()
           
             struct action_breakpoint_args_t b;
             b.maddr = addr;
-          
+            b.mlen = length;
+            b.type = (int)type;
+
             if (gdbserver_execute_on_main_thread(action_remove_breakpoint, &b, tmpbuf))
                 packet_send_message((const uint8_t*)tmpbuf, strlen((const char*)tmpbuf));
         
@@ -1184,22 +1189,76 @@ static uint8_t action_set_register(const void* arg, void* response)
     return 0;
 }
 
+/* Map an RSP Z/z breakpoint type to FuseX debugger breakpoint types. Writes up
+   to two types to out[] and returns the count; 0 means the type is unsupported. */
+static int
+rsp_breakpoint_fuse_types(int rsp_type, debugger_breakpoint_type* out)
+{
+    switch (rsp_type)
+    {
+        case 0: /* software breakpoint */
+        case 1: /* hardware breakpoint */
+            out[0] = DEBUGGER_BREAKPOINT_TYPE_EXECUTE;
+            return 1;
+        case 2: /* write watchpoint */
+            out[0] = DEBUGGER_BREAKPOINT_TYPE_WRITE;
+            return 1;
+        case 3: /* read watchpoint */
+            out[0] = DEBUGGER_BREAKPOINT_TYPE_READ;
+            return 1;
+        case 4: /* access watchpoint */
+            out[0] = DEBUGGER_BREAKPOINT_TYPE_WRITE;
+            out[1] = DEBUGGER_BREAKPOINT_TYPE_READ;
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+/* Addresses a Z/z request covers: execute breakpoints are a single address;
+   watchpoints honor the requested byte length. */
+static size_t
+rsp_breakpoint_span(const struct action_breakpoint_args_t* b)
+{
+    if (b->type == 0 || b->type == 1)
+        return 1;
+    return b->mlen ? b->mlen : 1;
+}
+
 static uint8_t action_set_breakpoint(const void* arg, void* response)
 {
     struct action_breakpoint_args_t* b = (struct action_breakpoint_args_t*)arg;
     char* resp_buff = (char*)response;
-  
-    if (debugger_breakpoint_add_address(
-        DEBUGGER_BREAKPOINT_TYPE_EXECUTE, memory_source_any, 0, b->maddr, 0,
-        DEBUGGER_BREAKPOINT_LIFE_PERMANENT, NULL))
+
+    debugger_breakpoint_type types[2];
+    int n = rsp_breakpoint_fuse_types(b->type, types);
+    if (n == 0)
     {
         strcpy(resp_buff, "E01");
+        return 0;
     }
-    else
+
+    size_t span = rsp_breakpoint_span(b);
+    int failed = 0;
+    int i;
+    size_t off;
+
+    for (i = 0; i < n && !failed; i++)
     {
-        strcpy(resp_buff, "OK");
+        for (off = 0; off < span; off++)
+        {
+            if (debugger_breakpoint_add_address(
+                types[i], memory_source_any, 0,
+                (libspectrum_word)(b->maddr + off), 0,
+                DEBUGGER_BREAKPOINT_LIFE_PERMANENT, NULL))
+            {
+                failed = 1;
+                break;
+            }
+        }
     }
-  
+
+    strcpy(resp_buff, failed ? "E01" : "OK");
     return 0;
 }
 
@@ -1208,32 +1267,42 @@ static uint8_t action_remove_breakpoint(const void* arg, void* response)
     struct action_breakpoint_args_t* b = (struct action_breakpoint_args_t*)arg;
     char* resp_buff = (char*)response;
   
-    libspectrum_word address = b->maddr;
-    GSList* ptr;
-    debugger_breakpoint* found = NULL;
-    for(ptr = debugger_breakpoints; ptr; ptr = ptr->next)
-    {
-        debugger_breakpoint* p = (debugger_breakpoint*)ptr->data;
-        if (p->type != DEBUGGER_BREAKPOINT_TYPE_EXECUTE)
-            continue;
-        if (p->value.address.source != memory_source_any)
-            continue;
-        if (p->value.address.offset != address)
-            continue;
-        found = p;
-        break;
-    }
-
-    if (found)
-    {
-        debugger_breakpoint_remove(found->id);
-        strcpy(resp_buff, "OK");
-    }
-    else
+    debugger_breakpoint_type types[2];
+    int n = rsp_breakpoint_fuse_types(b->type, types);
+    if (n == 0)
     {
         strcpy(resp_buff, "E01");
+        return 0;
     }
-  
+
+    size_t span = rsp_breakpoint_span(b);
+    int removed_any = 0;
+    int i;
+    size_t off;
+
+    for (i = 0; i < n; i++)
+    {
+        for (off = 0; off < span; off++)
+        {
+            libspectrum_word address = (libspectrum_word)(b->maddr + off);
+            GSList* ptr;
+            for (ptr = debugger_breakpoints; ptr; ptr = ptr->next)
+            {
+                debugger_breakpoint* p = (debugger_breakpoint*)ptr->data;
+                if (p->type != types[i])
+                    continue;
+                if (p->value.address.source != memory_source_any)
+                    continue;
+                if (p->value.address.offset != address)
+                    continue;
+                debugger_breakpoint_remove(p->id);
+                removed_any = 1;
+                break;
+            }
+        }
+    }
+
+    strcpy(resp_buff, removed_any ? "OK" : "E01");
     return 0;
 }
 
