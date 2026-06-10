@@ -25,6 +25,8 @@
 #include "fuse.h"
 #include "infrastructure/startup_manager.h"
 #include "memory.h"
+#include "memory_pages.h"
+#include "spectrum.h"
 #include "mempool.h"
 #include "periph.h"
 #include "machine.h"
@@ -276,6 +278,56 @@ uint8_t gdbserver_reset_via_remote_command(void)
     return 0;
 }
 
+/* Serve a 16K RAM bank over a custom qXfer object, bypassing the current Z80
+   paging so paged-out banks are reachable. args is "<bank>:<offset>,<length>"
+   with offset and length in hex; the reply is the qXfer "m"/"l" prefix followed
+   by binary-escaped bytes. */
+static void process_fuse_ram_read(char *args)
+{
+  char *sep = strchr(args, ':');
+  char *bank_end;
+  size_t offset = 0, length = 0, avail, want, n, i, o;
+  long bank;
+  const libspectrum_byte *src;
+
+  if (!sep) {
+    packet_send_message((const uint8_t*)"E00", 3);
+    return;
+  }
+  *sep = '\0';
+  bank = strtol(args, &bank_end, 0);
+  if (*args == '\0' || *bank_end != '\0' ||
+      sscanf(sep + 1, "%zx,%zx", &offset, &length) != 2 ||
+      bank < 0 || bank >= SPECTRUM_RAM_PAGES) {
+    packet_send_message((const uint8_t*)"E00", 3);
+    return;
+  }
+
+  if (offset >= 0x4000 || length == 0) {
+    /* At or past the end of the object: empty "last" reply. */
+    packet_send_message((const uint8_t*)"l", 1);
+    return;
+  }
+
+  avail = 0x4000 - offset;
+  want = length < avail ? length : avail;
+  n = want < 0x1000 ? want : 0x1000;   /* cap the chunk; escaped <= 2x */
+
+  tmpbuf[0] = (offset + n >= 0x4000) ? 'l' : 'm';
+  o = 1;
+  src = &RAM[bank][offset];
+  for (i = 0; i < n; i++) {
+    libspectrum_byte b = src[i];
+    if (b == '#' || b == '$' || b == '}' || b == '*') {
+      tmpbuf[o++] = '}';
+      tmpbuf[o++] = b ^ 0x20;
+    } else {
+      tmpbuf[o++] = b;
+    }
+  }
+  packet_send_message(tmpbuf, o);
+}
+
 static void process_xfer(const char *name, char *args)
 {
   const char *mode = args;
@@ -285,12 +337,15 @@ static void process_xfer(const char *name, char *args)
     return;
   }
   *args++ = '\0';
-  
+
   if (!strcmp(name, "features") && !strcmp(mode, "read")) {
       packet_send_message((const uint8_t*)FEATURE_STR, strlen(FEATURE_STR));
   }
   if (!strcmp(name, "exec-file") && !strcmp(mode, "read")) {
       packet_send_message((const uint8_t*)"/fuse/emulated", strlen("/fuse/emulated"));
+  }
+  if (!strcmp(name, "fuse-ram") && !strcmp(mode, "read")) {
+      process_fuse_ram_read(args);
   }
 }
 
@@ -320,7 +375,7 @@ static void process_query(char *payload)
     if (!strcmp(name, "Offsets"))
         packet_send_message((const uint8_t*)"", 0);
     if (!strcmp(name, "Supported"))
-        packet_send_message((const uint8_t*)"PacketSize=4000;qXfer:features:read+;qXfer:auxv:read+;vSpectranext+", strlen("PacketSize=4000;qXfer:features:read+;qXfer:auxv:read+;vSpectranext+"));
+        packet_send_message((const uint8_t*)"PacketSize=4000;qXfer:features:read+;qXfer:auxv:read+;qXfer:fuse-ram:read+;vSpectranext+", strlen("PacketSize=4000;qXfer:features:read+;qXfer:auxv:read+;qXfer:fuse-ram:read+;vSpectranext+"));
     if (!strcmp(name, "Symbol"))
         packet_send_message((const uint8_t*)"OK", 2);
     if (name == strstr(name, "ThreadExtraInfo"))
