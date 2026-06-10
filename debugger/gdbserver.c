@@ -101,22 +101,11 @@ enum spectranext_autoboot
 /** vSpectranext autoboot: if true at machine_reset, apply ram mount + autoboot once, then clear. */
 static enum spectranext_autoboot spectranext_autoboot = autoboot_nothing;
 
-static libspectrum_word* registers[] = {
-    &AF,
-    &BC,
-    &DE,
-    &HL,
-    &SP,
-    &PC,
-    &IX,
-    &IY,
-    &AF_,
-    &BC_,
-    &DE_,
-    &HL_,
-    &CLOCKL,
-    &CLOCKH
-};
+/* Number of registers served over g/G/p/P. Order is fixed by the target
+   description in arch.h (FEATURE_STR) and realized in get_register_value /
+   set_register_value: af bc de hl sp pc ix iy af' bc' de' hl' ir iff1 iff2 im
+   clockl clockh. */
+#define GDBSERVER_NUM_REGISTERS 18
 
 static uint8_t gdbserver_detrap();
 static void gdbserver_send_stop_reply(int trap_reason);
@@ -194,7 +183,7 @@ struct action_register_args_t {
 };
 
 struct action_set_registers_args_t {
-    libspectrum_word regs_data[sizeof(registers) / sizeof(libspectrum_word*)];
+    libspectrum_word regs_data[GDBSERVER_NUM_REGISTERS];
 };
 
 struct action_breakpoint_args_t {
@@ -459,21 +448,59 @@ static void process_vpacket(char *payload)
 
 static int set_register_value(int reg, libspectrum_word value)
 {
-    if (reg >= (sizeof(registers) / (sizeof(libspectrum_word*))))
+    switch (reg)
     {
-        return 1;
+        case 0:  AF = value; break;
+        case 1:  BC = value; break;
+        case 2:  DE = value; break;
+        case 3:  HL = value; break;
+        case 4:  SP = value; break;
+        case 5:  PC = value; break;
+        case 6:  IX = value; break;
+        case 7:  IY = value; break;
+        case 8:  AF_ = value; break;
+        case 9:  BC_ = value; break;
+        case 10: DE_ = value; break;
+        case 11: HL_ = value; break;
+        case 12: /* ir: I in the high byte, R in the low byte (bit 7 in r7) */
+            I = (value >> 8) & 0xff;
+            R = value & 0x7f;
+            R7 = value & 0x80;
+            break;
+        case 13: IFF1 = value & 0xff; break;
+        case 14: IFF2 = value & 0xff; break;
+        case 15: IM = value & 0xff; break;
+        case 16: CLOCKL = value; break;
+        case 17: CLOCKH = value; break;
+        default: return 1;
     }
-    *registers[reg] = value;
     return 0;
 }
 
 static int get_register_value(int reg, libspectrum_word* result)
 {
-    if (reg >= (sizeof(registers) / (sizeof(libspectrum_word*))))
+    switch (reg)
     {
-        return 1;
+        case 0:  *result = AF; break;
+        case 1:  *result = BC; break;
+        case 2:  *result = DE; break;
+        case 3:  *result = HL; break;
+        case 4:  *result = SP; break;
+        case 5:  *result = PC; break;
+        case 6:  *result = IX; break;
+        case 7:  *result = IY; break;
+        case 8:  *result = AF_; break;
+        case 9:  *result = BC_; break;
+        case 10: *result = DE_; break;
+        case 11: *result = HL_; break;
+        case 12: *result = IR; break;
+        case 13: *result = IFF1; break;
+        case 14: *result = IFF2; break;
+        case 15: *result = IM; break;
+        case 16: *result = CLOCKL; break;
+        case 17: *result = CLOCKH; break;
+        default: return 1;
     }
-    *result = *registers[reg];
     return 0;
 }
 
@@ -519,12 +546,12 @@ uint8_t process_packet()
         case 'G':
         {
             struct action_set_registers_args_t r = {};
-            if (strlen(payload) != ((sizeof(registers) / sizeof(libspectrum_word*)) * 4))
+            if (strlen(payload) != (GDBSERVER_NUM_REGISTERS * 4))
             {
                 packet_send_message((const uint8_t*)"E01", 3);
                 break;
             }
-            hex2mem(payload, (void *)&r.regs_data, (sizeof(registers) / sizeof(libspectrum_word*)) * 2);
+            hex2mem(payload, (void *)&r.regs_data, GDBSERVER_NUM_REGISTERS * 2);
           
             if (gdbserver_execute_on_main_thread(action_set_registers, &r, tmpbuf))
                 packet_send_message((const uint8_t*)tmpbuf, strlen((const char*)tmpbuf));
@@ -1166,15 +1193,15 @@ static uint8_t action_get_registers(const void* arg, void* response)
 {
     int i;
     char* resp_buff = (char*)response;
-  
-    libspectrum_word regs[sizeof(registers) / (sizeof(libspectrum_word*))];
-  
-    for (i = 0; i < sizeof(registers) / (sizeof(libspectrum_word*)); i++)
+
+    libspectrum_word regs[GDBSERVER_NUM_REGISTERS];
+
+    for (i = 0; i < GDBSERVER_NUM_REGISTERS; i++)
     {
         get_register_value(i, &regs[i]);
     }
-  
-    mem2hex((const uint8_t *)regs, resp_buff, (sizeof(registers) / sizeof(libspectrum_word*)) * 2);
+
+    mem2hex((const uint8_t *)regs, resp_buff, GDBSERVER_NUM_REGISTERS * 2);
   
     return 0;
 }
@@ -1185,7 +1212,7 @@ static uint8_t action_set_registers(const void* arg, void* response)
     struct action_set_registers_args_t* regs = (struct action_set_registers_args_t*)arg;
     char* resp_buff = (char*)response;
   
-    for (i = 0; i < sizeof(registers) / (sizeof(libspectrum_word*)); i++)
+    for (i = 0; i < GDBSERVER_NUM_REGISTERS; i++)
     {
         set_register_value(i, regs->regs_data[i]);
     }
