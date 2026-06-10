@@ -824,7 +824,11 @@ int gdbserver_start( int port )
 
     struct sockaddr_in servaddr;
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    /* Bind to loopback only by default: the debugger can read and write memory,
+       write I/O ports, and reset the machine, so it must not be reachable
+       off-host unless explicitly opted in. */
+    servaddr.sin_addr.s_addr = htonl(
+        settings_current.gdbserver_all_interfaces ? INADDR_ANY : INADDR_LOOPBACK);
     
     // Try to bind to the requested port, or find the next available port
     int actual_port = port;
