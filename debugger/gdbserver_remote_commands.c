@@ -287,5 +287,7 @@ uint8_t remote_command_passthrough(const char *command)
     if (output[0])
         gdbserver_send_remote_console_output(output);
 
-    return 0;
+    /* A command that failed to parse or evaluate emits ui_error; report it as
+       an RSP error so the client can tell success from failure. */
+    return ui_error_capture_had_error() ? 1 : 0;
 }

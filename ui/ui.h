@@ -75,6 +75,8 @@ void ui_error_frame( void );
    dropped silently. ui_error_capture_end() restores the normal path. */
 void ui_error_capture_begin( char *buf, size_t size );
 void ui_error_capture_end( void );
+/* Whether any message was diverted since the last ui_error_capture_begin(). */
+int ui_error_capture_had_error( void );
 
 /* Callbacks used by the debugger */
 int ui_debugger_activate( void );
