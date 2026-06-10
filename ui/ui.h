@@ -68,6 +68,14 @@ int ui_verror( ui_error_level severity, const char *format, va_list ap )
 int ui_error_specific( ui_error_level severity, const char *message );
 void ui_error_frame( void );
 
+/* Divert ui_error() output to a caller-supplied buffer instead of the UI's
+   normal error path (e.g. NSAlert). Used by the gdbserver monitor passthrough
+   to capture parse errors from debugger_command_evaluate. The buffer is
+   appended to, one message per line, until full; subsequent messages are
+   dropped silently. ui_error_capture_end() restores the normal path. */
+void ui_error_capture_begin( char *buf, size_t size );
+void ui_error_capture_end( void );
+
 /* Callbacks used by the debugger */
 int ui_debugger_activate( void );
 int ui_debugger_deactivate( int interruptable );
