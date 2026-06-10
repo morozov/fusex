@@ -69,6 +69,11 @@ void gdbserver_note_emulating(void)
     pthread_mutex_unlock(&emulating_mutex);
 }
 
+/* Set by the breakpoint hit path when a memory watchpoint fires, consumed by
+   the next stop reply: 0 = none, 2 = write, 3 = read. */
+static int gdbserver_watch_kind = 0;
+static libspectrum_word gdbserver_watch_addr = 0;
+
 static pthread_t network_thread_id;
 /** Set while tearing the listener down; unblocks gdbserver_execute_on_main_thread and gdbserver_activate_with_reason. */
 static volatile int gdbserver_shutting_down;
@@ -141,8 +146,25 @@ static void gdbserver_send_stop_reply(int trap_reason)
             break;
     }
 
-    sprintf(tbuf, "T%02xthread:p%02x.%02x;", signal, 1, 1);
+    sprintf(tbuf, "T%02x", signal);
+    if (signal == 5 && gdbserver_watch_kind)
+    {
+        const char* keyword = (gdbserver_watch_kind == 3) ? "rwatch" : "watch";
+        sprintf(tbuf + strlen(tbuf), "%s:%x;", keyword,
+                (unsigned)gdbserver_watch_addr);
+    }
+    gdbserver_watch_kind = 0;
+    sprintf(tbuf + strlen(tbuf), "thread:p%02x.%02x;", 1, 1);
     packet_send_message((const uint8_t*)tbuf, strlen(tbuf));
+}
+
+/* Record that the next stop reply was caused by a memory watchpoint of the
+   given RSP type (2 = write, 3 = read) at addr, so it is reported as
+   watch:/rwatch:. Called from the breakpoint hit path. */
+void gdbserver_note_watchpoint(int rsp_type, libspectrum_word addr)
+{
+    gdbserver_watch_kind = (rsp_type == 2 || rsp_type == 3) ? rsp_type : 0;
+    gdbserver_watch_addr = addr;
 }
 
 static uint8_t action_get_registers(const void* arg, void* response);

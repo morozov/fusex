@@ -15,6 +15,9 @@ void gdbserver_stop();
 int gdbserver_activate();
 int gdbserver_activate_with_reason(int trap_reason);
 void gdbserver_note_emulating(void);
+/* Record that the next stop reply was caused by a memory watchpoint:
+   rsp_type 2 = write, 3 = read; addr is the watched address. */
+void gdbserver_note_watchpoint(int rsp_type, uint16_t addr);
 void gdbserver_refresh_status();
 void gdbserver_schedule_reset(void);
 void gdbserver_schedule_autoboot(void);

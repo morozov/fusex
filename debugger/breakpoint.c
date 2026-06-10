@@ -253,26 +253,44 @@ debugger_check( debugger_breakpoint_type type, libspectrum_dword value )
       ptr_next = ptr->next;
 
       if( breakpoint_check( bp, type, value ) ) {
+        extern char gdbserver_debugging_enabled;
+        extern int gdbserver_activate_with_reason(int trap_reason);
+        extern void gdbserver_note_watchpoint(int rsp_type, libspectrum_word addr);
+
+        int trap_gdbserver = 0;
+        int rsp_watchpoint_type = 0;
+        libspectrum_word rsp_watchpoint_address = 0;
+
         debugger_mode = DEBUGGER_MODE_HALTED;
         debugger_command_evaluate( bp->commands );
+
+        /* Snapshot what the gdbserver needs from bp before it is freed below. */
+        if( gdbserver_debugging_enabled ) {
+          trap_gdbserver = 1;
+          if( bp->type == DEBUGGER_BREAKPOINT_TYPE_WRITE ) {
+            rsp_watchpoint_type = 2;
+            rsp_watchpoint_address = bp->value.address.offset;
+          } else if( bp->type == DEBUGGER_BREAKPOINT_TYPE_READ ) {
+            rsp_watchpoint_type = 3;
+            rsp_watchpoint_address = bp->value.address.offset;
+          }
+        }
 
         if( bp->life == DEBUGGER_BREAKPOINT_LIFE_ONESHOT ) {
           debugger_breakpoints = g_slist_remove( debugger_breakpoints, bp );
           libspectrum_free( bp );
           signal_breakpoints_updated = 1;
         }
-        
-        // Activate gdbserver with breakpoint trap reason
-        extern char gdbserver_debugging_enabled;
-        extern int gdbserver_activate_with_reason(int trap_reason);
-        if (gdbserver_debugging_enabled) {
-            gdbserver_activate_with_reason(DEBUG_TRAP_REASON_BREAKPOINT);
 
-            /* The trap above re-enters on this same thread and runs gdbserver
-               actions that can add, remove, or clear breakpoints, leaving ptr
-               and ptr_next dangling. Stop here; debugger_check() re-runs on the
-               next instruction from a fresh list head. */
-            break;
+        if( trap_gdbserver ) {
+          gdbserver_note_watchpoint( rsp_watchpoint_type, rsp_watchpoint_address );
+          gdbserver_activate_with_reason( DEBUG_TRAP_REASON_BREAKPOINT );
+
+          /* The trap above re-enters on this same thread and runs gdbserver
+             actions that can add, remove, or clear breakpoints, leaving ptr
+             and ptr_next dangling. Stop here; debugger_check() re-runs on the
+             next instruction from a fresh list head. */
+          break;
         }
       }
 
