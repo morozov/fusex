@@ -58,6 +58,9 @@ static uidisplay_hotswap_reason next_hotswap_reason =
    gdbserver_execute_on_main_thread(). */
 static char *ui_error_capture_buf = NULL;
 static size_t ui_error_capture_size = 0;
+/* Messages diverted since the last ui_error_capture_begin(); lets the gdbserver
+   passthrough tell a failed command (which emits ui_error) from a good one. */
+static int ui_error_capture_messages = 0;
 
 static int
 print_error_to_stderr( ui_error_level severity, const char *message );
@@ -99,6 +102,7 @@ ui_verror( ui_error_level severity, const char *format, va_list ap )
 
   if( ui_error_capture_buf ) {
     size_t cur = strlen( ui_error_capture_buf );
+    ui_error_capture_messages++;
     if( cur + 1 < ui_error_capture_size ) {
       snprintf( ui_error_capture_buf + cur, ui_error_capture_size - cur,
                 "%s\n", message );
@@ -129,6 +133,7 @@ ui_error_capture_begin( char *buf, size_t size )
 {
   ui_error_capture_buf = buf;
   ui_error_capture_size = size;
+  ui_error_capture_messages = 0;
   if( buf && size > 0 ) buf[0] = '\0';
 }
 
@@ -137,6 +142,12 @@ ui_error_capture_end( void )
 {
   ui_error_capture_buf = NULL;
   ui_error_capture_size = 0;
+}
+
+int
+ui_error_capture_had_error( void )
+{
+  return ui_error_capture_messages > 0;
 }
 
 ui_confirm_save_t
