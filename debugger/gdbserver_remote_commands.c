@@ -1,10 +1,16 @@
+#include "config.h"
+
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
+#include "debugger.h"
+#include "ui/ui.h"
 
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
+#define PASSTHROUGH_OUTPUT_SIZE 2048
 
 #include "fuse.h"
 #include "libspectrum.h"
@@ -31,6 +37,16 @@ static uint8_t remote_command_help( const char *args GCC_UNUSED )
         gdbserver_send_remote_console_output("\n");
     }
 
+    gdbserver_send_remote_console_output(
+        "Any other command is dispatched to the Fuse internal debugger "
+        "(see monitor.md):\n"
+        "  break [addr] [if cond]      port-, memory-, time-, event-watch\n"
+        "  clear / delete / condition  manage breakpoints\n"
+        "  set addr value              poke memory; set $var value\n"
+        "  out port value              write to I/O port\n"
+        "  finish / next / step        execution control\n"
+        "Addresses accept absolute hex or 'source:page:offset' (RAM:5:0, "
+        "ROM:0:0x38, etc.).\n");
     return 0;
 }
 
@@ -188,3 +204,40 @@ const struct remote_command_entry_t remote_commands[] = {
     { "xfs-debug", remote_command_xfs_debug },
     { NULL, NULL }
 };
+
+/* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
+   data is the command string; response is a char[PASSTHROUGH_OUTPUT_SIZE]
+   buffer that receives any ui_error() text emitted during evaluation. */
+static uint8_t action_passthrough_eval(const void *data, void *response)
+{
+    const char *command = (const char *)data;
+    char *output = (char *)response;
+
+    ui_error_capture_begin(output, PASSTHROUGH_OUTPUT_SIZE);
+    debugger_command_evaluate(command);
+    ui_error_capture_end();
+
+    return 0;
+}
+
+uint8_t remote_command_passthrough(const char *command)
+{
+    char output[PASSTHROUGH_OUTPUT_SIZE];
+
+    if (!command || !*command)
+        return 1;
+
+    output[0] = '\0';
+
+    /* Serialize against the emulator thread; debugger state (breakpoints,
+       memory, registers) must not mutate while emulation is mid-instruction.
+       Requires the stub to be trapped, which is the normal state when an
+       agent is driving the gdbserver. */
+    if (!gdbserver_execute_on_main_thread(action_passthrough_eval, command, output))
+        return 1;
+
+    if (output[0])
+        gdbserver_send_remote_console_output(output);
+
+    return 0;
+}

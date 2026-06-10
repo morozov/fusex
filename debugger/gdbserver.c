@@ -254,7 +254,10 @@ static void process_remote_command(const char *hex_command)
         }
     }
 
-    packet_send_message((const uint8_t *)"E04", 3);
+    if (remote_command_passthrough(command))
+        packet_send_message((const uint8_t *)"E04", 3);
+    else
+        packet_send_message((const uint8_t *)"OK", 2);
 }
 
 static void gdbserver_reset_event_fn(libspectrum_dword event_time, int type,
