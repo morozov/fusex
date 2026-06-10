@@ -9,6 +9,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define PASSTHROUGH_OUTPUT_SIZE 2048
 
@@ -207,15 +210,60 @@ const struct remote_command_entry_t remote_commands[] = {
 
 /* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
    data is the command string; response is a char[PASSTHROUGH_OUTPUT_SIZE]
-   buffer that receives any ui_error() text emitted during evaluation. */
+   buffer that receives the command's output: ui_error() text plus anything the
+   command writes to stdout (e.g. `print`, which uses printf). */
 static uint8_t action_passthrough_eval(const void *data, void *response)
 {
     const char *command = (const char *)data;
     char *output = (char *)response;
+#ifndef WIN32
+    int saved_stdout = -1;
+    int pipefd[2] = { -1, -1 };
+
+    /* Redirect stdout to a pipe for the duration of the evaluation. Read
+       commands such as `print` write their result with printf, which the
+       ui_error capture below does not intercept. (Disassembly goes to the GUI,
+       not stdout, and remains a client-side concern.) */
+    fflush(stdout);
+    if (pipe(pipefd) == 0)
+    {
+        saved_stdout = dup(STDOUT_FILENO);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+    }
+#endif
 
     ui_error_capture_begin(output, PASSTHROUGH_OUTPUT_SIZE);
     debugger_command_evaluate(command);
     ui_error_capture_end();
+
+#ifndef WIN32
+    if (saved_stdout != -1)
+    {
+        size_t len = strlen(output);
+        char buf[256];
+        ssize_t n;
+
+        fflush(stdout);
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
+
+        /* Append the captured stdout after any ui_error text. The read end is
+           non-blocking so an empty pipe returns immediately. */
+        fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+        while (len + 1 < PASSTHROUGH_OUTPUT_SIZE &&
+               (n = read(pipefd[0], buf, sizeof(buf))) > 0)
+        {
+            size_t take = (size_t)n;
+            if (take > PASSTHROUGH_OUTPUT_SIZE - 1 - len)
+                take = PASSTHROUGH_OUTPUT_SIZE - 1 - len;
+            memcpy(output + len, buf, take);
+            len += take;
+        }
+        output[len] = '\0';
+        close(pipefd[0]);
+    }
+#endif
 
     return 0;
 }
