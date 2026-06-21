@@ -31,6 +31,7 @@ CLEANFILES += $(ui_null_built)
 
 ui_null_files = \
 		ui/null/null_ui.c \
+		ui/null/null_compat.c \
                 ui/null/options.c
 
 ui_null_built = \
