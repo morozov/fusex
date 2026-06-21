@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "settings.h"
+#include "peripherals/joystick.h"
 
 extern int  fuse_init( int argc, char **argv );
 extern int  fuse_end( void );
@@ -20,13 +21,28 @@ extern int  machine_reset( int hard_reset );
 
 /* ---- public API ---- */
 
-/* Boot a machine; turbo on (unthrottled). Returns 0 on success. */
+/* Initialize from a full argv (machine, peripherals, media file, ...) as fuse
+   would parse from the command line; turbo on. Returns 0 on success. */
+int fusex_init_argv( int argc, char **argv )
+{
+  int r = fuse_init( argc, argv );
+  settings_current.emulation_speed = 1000000;   /* bypass wall-clock pacing */
+  /* Route fusex_joystick() to the Kempston port (enable it with --kempston). */
+  settings_current.joystick_1_output = JOYSTICK_TYPE_KEMPSTON;
+  return r;
+}
+
+/* Action: joystick button (LEFT=0, RIGHT=1, UP=2, DOWN=3, FIRE=4). */
+void fusex_joystick( int button, int press )
+{
+  joystick_press( 0, (joystick_button)button, press );
+}
+
+/* Convenience: boot a bare machine with no media. */
 int fusex_init( const char *machine )
 {
   char *argv[3] = { "fusex", "--machine", (char *)machine };
-  int r = fuse_init( 3, argv );
-  settings_current.emulation_speed = 1000000;   /* bypass wall-clock pacing */
-  return r;
+  return fusex_init_argv( 3, argv );
 }
 
 /* Reset: load a start snapshot, or power-on reset if path is NULL. */
