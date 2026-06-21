@@ -157,6 +157,9 @@ AS_IF([test "$fakeglib" = no], [
     [AC_DEFINE([HAVE_LIB_GLIB], 1, [Defined if we've got GLib])],
     [AC_MSG_ERROR([GLib not found, and libspectrum has no internal replacement])]
   )
+  dnl Some headers (e.g. rzx.h) use GSList without including <glib.h>; with the
+  dnl real GLib libspectrum only forward-declares it, so force the include.
+  GLIB_CFLAGS="$GLIB_CFLAGS -include glib.h"
 ])
 
 dnl Check if supplied libspectrum has support for compressed szx files

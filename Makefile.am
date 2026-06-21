@@ -94,7 +94,7 @@ settings.c: settings-win32.pl settings.dat
 	$(AM_V_GEN)$(PERL) -I$(srcdir)/perl $(srcdir)/settings-win32.pl $(srcdir)/settings.dat > $@.tmp && mv $@.tmp $@
 else
 settings.c: settings.pl settings.dat
-	$(AM_V_GEN)$(PERL) -I$(srcdir)/perl $(srcdir)/settings.pl $(srcdir)/settings.dat > $@.tmp && mv $@.tmp $@
+	$(AM_V_GEN)$(PERL) -I$(srcdir)/perl $(srcdir)/settings.pl --c $(srcdir)/settings.dat > $@.tmp && mv $@.tmp $@
 endif
 
 settings.h: settings-header.pl settings.dat
