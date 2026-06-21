@@ -41,6 +41,7 @@ CLEANFILES += $(ui_null_built)
 
 ui_null_files = \
 		ui/null/null_ui.c \
+		ui/null/fusex_api.c \
                 ui/null/options.c
 
 ui_null_built = \
