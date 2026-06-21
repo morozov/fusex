@@ -125,3 +125,7 @@ xcuserdata
 /fusex-*
 .idea/
 /.ticks_history.txt
+
+# Out-of-tree build and scratch dirs (not committed)
+/build-null/
+/scratch/
