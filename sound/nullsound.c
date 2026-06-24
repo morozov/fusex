@@ -27,18 +27,18 @@
 int
 sound_lowlevel_init( const char *device, int *freqptr, int *stereoptr )
 {
-  /* Audio driver not initialised */
-  return 1;
+  /* Headless capture sink: report success with no real output device so the
+     sound engine runs and fills the per-frame sample buffer. The samples are
+     read out via fusex_get_audio() rather than played to a device. */
+  return 0;
 }
 
 void
 sound_lowlevel_end( void )
 {
-  fuse_abort();
 }
 
 void
 sound_lowlevel_frame( unsigned char *data, int len )
 {
-  fuse_abort();
 }
