@@ -3,9 +3,11 @@
    main() — the library is loaded by the host process. */
 
 #include <stdio.h>
+#include <string.h>
 #include <libspectrum.h>
 #include "settings.h"
 #include "peripherals/joystick.h"
+#include "ui/scaler/scaler.h"
 
 extern int  fuse_init( int argc, char **argv );
 extern int  fuse_end( void );
@@ -19,6 +21,9 @@ extern int  machine_reset( int hard_reset );
 extern int  rzx_start_recording( const char *filename, int embed_snapshot );
 extern int  rzx_stop_recording( void );
 extern void writebyte_internal( libspectrum_word address, libspectrum_byte b );
+extern void movie_start( const char *name );
+extern void movie_stop( void );
+extern int  movie_recording;
 
 /* The null UI (null_ui.c, null_compat.c) and machine.c supply the glue the
    sockets-off/spectranet-off/headless build needs; this file is only the API. */
@@ -46,6 +51,68 @@ void fusex_joystick( int button, int press )
    replays standalone in FuseX). Stop to flush the file. */
 int fusex_rzx_start( const char *path ) { return rzx_start_recording( path, 1 ); }
 int fusex_rzx_stop( void ) { return rzx_stop_recording(); }
+
+/* Whether RZX playback is still running: 0 once the recording's frames are
+   exhausted. A renderer stops at the 0 transition instead of capturing the
+   frozen post-recording screen. */
+int fusex_rzx_playing( void ) { extern int rzx_playback; return rzx_playback; }
+
+/* Record a Fuse Movie File (FMF) of subsequent play -- video + sound captured by the
+   emulator's native movie recorder, faithful to live execution (no RZX replay). Convert
+   the .fmf to MP4 with fmfconv/fmf2mp4. Returns nonzero if recording started. */
+int fusex_movie_start( const char *path ) { movie_start( path ); return movie_recording; }
+void fusex_movie_stop( void ) { movie_stop(); }
+
+/* Observation: the play area run through any registered Fuse scaler, selected by
+   its Fuse id ("tv2x", "tv3x", "paltv3x", "2x", "hq3x", ... -- the scaler_info ids
+   from ui/scaler/scaler.c), returned as RGB24 at that scaler's scale factor. buf
+   must hold (256*f)*(192*f)*3 bytes for scale factor f (<= 4). Returns the pixel
+   count, or 0 for an unknown scaler. Uses the 16-bit scaler path with a 555 source,
+   exactly as the macOS UI (cocoadisplay.m); the 32-bit procs are wired only on _WIN32.
+   Integer scale factors only (the TV/PAL/plain/hq families); fractional ones mis-size. */
+int fusex_get_screen_scaled( unsigned char *buf, const char *scaler_name )
+{
+  enum { W = 256, H = 192, PW = W + 3 };           /* PW = words per source row incl border */
+  static libspectrum_word src[ ( H + 4 ) * PW ];
+  static libspectrum_word dst[ ( H * 4 ) * ( W * 4 ) ];
+  static libspectrum_word pal[16];
+  static int inited = 0;
+  ScalerProc *proc;
+  int st, x, y, k, scale, ow, oh;
+  if( !inited ) {
+    static const unsigned char c[16][3] = {
+      {0,0,0},{0,0,192},{192,0,0},{192,0,192},{0,192,0},{0,192,192},{192,192,0},{192,192,192},
+      {0,0,0},{0,0,255},{255,0,0},{255,0,255},{0,255,0},{0,255,255},{255,255,0},{255,255,255} };
+    int i;
+    for( i = 0; i < 16; i++ )
+      pal[i] = (libspectrum_word)( ( c[i][0] >> 3 ) | ( ( c[i][1] >> 3 ) << 5 ) | ( ( c[i][2] >> 3 ) << 10 ) );
+    scaler_select_bitformat( 555 );   /* sets the 16-bit scaler masks; matches cocoadisplay.m */
+    inited = 1;
+  }
+  st = scaler_get_type( scaler_name );
+  if( st < 0 ) return 0;
+  proc = scaler_get_proc16( st );
+  if( !proc ) return 0;
+  scale = (int)( scaler_get_scaling_factor( st ) + 0.5f );
+  if( scale < 1 ) scale = 1;
+  ow = W * scale; oh = H * scale;
+  memset( src, 0, sizeof( src ) );
+  for( y = 0; y < H; y++ ) {
+    libspectrum_word *row = src + ( y + 2 ) * PW + 1;
+    for( x = 0; x < W; x++ ) row[x] = pal[ display_getpixel( 32 + x, 24 + y ) & 0x0f ];
+  }
+  proc( (const libspectrum_byte *)( src + 2 * PW + 1 ), PW * 2,
+        (libspectrum_byte *)dst, ow * 2, W, H );
+  k = 0;
+  for( y = 0; y < oh; y++ )
+    for( x = 0; x < ow; x++ ) {
+      libspectrum_word p = dst[ y * ow + x ];
+      buf[k++] = (unsigned char)( ( p & 0x1f ) << 3 );
+      buf[k++] = (unsigned char)( ( ( p >> 5 ) & 0x1f ) << 3 );
+      buf[k++] = (unsigned char)( ( ( p >> 10 ) & 0x1f ) << 3 );
+    }
+  return ow * oh;
+}
 
 /* Convenience: boot a bare machine with no media. */
 int fusex_init( const char *machine )
