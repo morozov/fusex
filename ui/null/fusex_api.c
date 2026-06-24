@@ -3,6 +3,7 @@
    main() — the library is loaded by the host process. */
 
 #include <stdio.h>
+#include <libspectrum.h>
 #include "settings.h"
 #include "peripherals/joystick.h"
 
@@ -15,6 +16,9 @@ extern void keyboard_release( int key );
 extern int  snapshot_read( const char *filename );
 extern int  snapshot_write( const char *filename );
 extern int  machine_reset( int hard_reset );
+extern int  rzx_start_recording( const char *filename, int embed_snapshot );
+extern int  rzx_stop_recording( void );
+extern void writebyte_internal( libspectrum_word address, libspectrum_byte b );
 
 /* The null UI (null_ui.c, null_compat.c) and machine.c supply the glue the
    sockets-off/spectranet-off/headless build needs; this file is only the API. */
@@ -38,6 +42,11 @@ void fusex_joystick( int button, int press )
   joystick_press( 0, (joystick_button)button, press );
 }
 
+/* Record an RZX of subsequent play (embeds the current state, so the .rzx
+   replays standalone in FuseX). Stop to flush the file. */
+int fusex_rzx_start( const char *path ) { return rzx_start_recording( path, 1 ); }
+int fusex_rzx_stop( void ) { return rzx_stop_recording(); }
+
 /* Convenience: boot a bare machine with no media. */
 int fusex_init( const char *machine )
 {
@@ -54,6 +63,12 @@ int fusex_reset( const char *snapshot )
 
 /* Save current machine state to a snapshot (for capturing a start state). */
 int fusex_save( const char *path ) { return snapshot_write( path ); }
+
+/* Patch a byte in Z80 RAM, so the host process can alter running machine state. */
+void fusex_poke( int addr, int val )
+{
+  writebyte_internal( (libspectrum_word)addr, (libspectrum_byte)val );
+}
 
 /* Action: hold/release a key (keyboard_key_name; ASCII-valued for letters). */
 void fusex_key_down( int key ) { keyboard_press( key ); }
