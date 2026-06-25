@@ -55,6 +55,11 @@ static int gdbserver_socket;
 int gdbserver_client_socket = -1;  // Made non-static so packets.c can access it
 uint8_t tmpbuf[0x20000];  // Made non-static so vfile_ext.c can access it
 static volatile char gdbserver_trapped = 0;
+/* Single-step state: when a step is pending we resume and trap on the next
+   instruction-fetch check after tstates advances (so we land on the true next
+   instruction, branch or not), rather than the current one. */
+static volatile int gdbserver_step_pending = 0;
+static libspectrum_dword gdbserver_step_tstates = 0;
 static int gdbserver_port = 0;
 static int gdbserver_requested_port = 0;
 static int gdbserver_last_trap_reason = DEBUG_TRAP_REASON_SIGNAL_RECEIVED;
@@ -1462,7 +1467,12 @@ static uint8_t action_step_instruction(const void* arg, void* response)
 
     if (a == NULL)
     {
-        return 1;
+        /* Bare single-step: resume and trap once exactly one instruction has
+           executed (see gdbserver_step_should_trap). Returning 1 here, as the
+           code used to, leaves the CPU halted without stepping. */
+        gdbserver_step_pending = 1;
+        gdbserver_step_tstates = tstates;
+        return 0;
     }
     else
     {
@@ -1470,14 +1480,29 @@ static uint8_t action_step_instruction(const void* arg, void* response)
         {
             PC = a->addr;
         }
-      
+
         debugger_breakpoint_add_address(
             DEBUGGER_BREAKPOINT_TYPE_EXECUTE, memory_source_any, 0, PC + a->len, 0,
             DEBUGGER_BREAKPOINT_LIFE_ONESHOT, NULL
         );
     }
-  
+
     return 0;
+}
+
+int gdbserver_step_should_trap(int is_execute)
+{
+    if (!gdbserver_step_pending || !is_execute)
+        return 0;
+
+    /* Wait until an instruction has actually executed since the step request:
+       the current instruction's fetch check may run before it executes, and we
+       must not re-trap on it. tstates advances by at least one per instruction. */
+    if (tstates == gdbserver_step_tstates)
+        return 0;
+
+    gdbserver_step_pending = 0;
+    return 1;
 }
 
 int gdbserver_activate()
