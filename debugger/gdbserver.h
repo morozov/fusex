@@ -14,6 +14,10 @@ int gdbserver_start( int port );
 void gdbserver_stop();
 int gdbserver_activate();
 int gdbserver_activate_with_reason(int trap_reason);
+/* For a pending single-step (the `s`/`i` packet): true once one instruction has
+   executed since the step was requested, so the debugger traps on the real next
+   instruction (correct across branches). is_execute is set for an EXECUTE check. */
+int gdbserver_step_should_trap(int is_execute);
 void gdbserver_note_emulating(void);
 /* Record that the next stop reply was caused by a memory watchpoint:
    rsp_type 2 = write, 3 = read; addr is the watched address. */

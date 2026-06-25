@@ -247,6 +247,14 @@ debugger_check( debugger_breakpoint_type type, libspectrum_dword value )
   case DEBUGGER_MODE_INACTIVE: return 0;
 
   case DEBUGGER_MODE_ACTIVE:
+    /* A pending gdbserver single-step traps on the next instruction fetch,
+       ahead of and independent of the breakpoint list. */
+    if( gdbserver_step_should_trap( type == DEBUGGER_BREAKPOINT_TYPE_EXECUTE ) ) {
+      debugger_mode = DEBUGGER_MODE_HALTED;
+      gdbserver_activate_with_reason( DEBUG_TRAP_REASON_BREAKPOINT );
+      break;
+    }
+
     for( ptr = debugger_breakpoints; ptr; ptr = ptr_next ) {
 
       bp = ptr->data;
