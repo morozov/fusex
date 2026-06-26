@@ -413,12 +413,18 @@ int fuse_init(int argc, char **argv)
     ui_error( UI_ERROR_WARNING,
               "--gdbserver-wait has no effect without --gdbserver-enable; ignoring it" );
 
-  if (!settings_current.gdbserver_enable) {
+  if( settings_current.gdbserver_enable ) {
+    /* Open the gdbserver listener at startup so headless / null-UI builds serve
+       it too. The GUI build otherwise reaches gdbserver_start() only via the
+       display refresh path, which a headless run loop never drives. */
+    gdbserver_refresh_status();
+    if( settings_current.gdbserver_wait ) {
+      /* Halt before the first opcode. */
+      debugger_mode = DEBUGGER_MODE_HALTED;
+    }
+  } else {
     /* Must do this after all subsytems are initialised */
     debugger_command_evaluate( settings_current.debugger_command );
-  } else if( settings_current.gdbserver_wait ) {
-    /* Halt before the first opcode. */
-    debugger_mode = DEBUGGER_MODE_HALTED;
   }
 
   if( ui_mouse_present ) ui_mouse_grabbed = ui_mouse_grab( 1 );
