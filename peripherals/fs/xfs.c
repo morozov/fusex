@@ -9,8 +9,6 @@ struct xfs_engine_mount_t xfs_mounted_engines[4] = {0};
 // Handles array - shared between task and emulator  
 struct xfs_handle_t xfs_handles[XFS_MAX_FDS] = {0};
 
-#define XFS_DEBUG(...) do { if (xfs_debug_is_enabled()) printf(__VA_ARGS__); } while(0)
-
 // Helper functions
 static inline struct xfs_handle_t* get_handle(uint8_t handle)
 {

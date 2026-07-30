@@ -16,9 +16,6 @@
 #include "../http/httpc.h"
 #include "../http/http_sck.h"
 
-// Macro for XFS debug output (only prints if enabled)
-#define XFS_DEBUG(...) do { if (xfs_debug_is_enabled()) printf(__VA_ARGS__); } while(0)
-
 struct xfs_handle_https_file_t
 {
     uint8_t *blob;       /* PSRAM download blob from download_blob_alloc */

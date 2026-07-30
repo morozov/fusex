@@ -26,9 +26,6 @@
 #include "libspectrum.h"
 #include "ui/ui.h"
 
-// Macro for XFS debug output
-#define XFS_DEBUG(...) do { if (xfs_debug_is_enabled()) printf(__VA_ARGS__); } while(0)
-
 // Convert POSIX errno to XFS error code (use negative errno)
 static int16_t xfs_error_from_errno(int err)
 {
@@ -376,7 +373,7 @@ static int16_t fs_readdir(const struct xfs_engine_mount_t* engine, struct xfs_ha
     struct dirent *entry;
     int err = 0;
     
-    // Read directory entries, skipping "." and ".."
+    // Read directory entries, skipping "."
     errno = 0;
     do
     {
@@ -389,8 +386,8 @@ static int16_t fs_readdir(const struct xfs_engine_mount_t* engine, struct xfs_ha
             }
             break; // End of directory or error
         }
-        // Skip "." and ".." entries
-    } while (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0);
+        // Skip "." entries
+    } while (strcmp(entry->d_name, ".") == 0);
     
     if (err != 0)
     {

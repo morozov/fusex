@@ -336,6 +336,8 @@ void xfs_close_handles_for_mount(const struct xfs_engine_mount_t *mount);
 // XFS debug logging control
 extern void xfs_debug_enable(bool enable);
 extern bool xfs_debug_is_enabled(void);
+extern void xfs_debug_log(const char *format, ...);
+#define XFS_DEBUG(...) do { if( xfs_debug_is_enabled() ) xfs_debug_log( __VA_ARGS__ ); } while(0)
 
 // Command handlers (FreeRTOS-independent, usable in emulator)
 extern void xfs_handle_command(volatile struct xfs_registers_t* registers);
