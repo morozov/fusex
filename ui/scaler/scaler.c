@@ -164,6 +164,7 @@ scaler_select_scaler( scaler_type scaler )
 {
   if( scaler_activate_scaler( scaler ) ) return 1;
 
+  uidisplay_set_next_hotswap_reason( UIDISPLAY_HOTSWAP_REASON_SCALER_EXPLICIT );
   return uidisplay_hotswap_gfx_mode();
 }
 

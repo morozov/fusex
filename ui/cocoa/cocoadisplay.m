@@ -125,9 +125,9 @@ init_scalers( void )
   }
   
   if( scaler_is_supported( current_scaler ) ) {
-    scaler_select_scaler( current_scaler );
+    scaler_activate_scaler( current_scaler );
   } else {
-    scaler_select_scaler( SCALER_NORMAL );
+    scaler_activate_scaler( SCALER_NORMAL );
   }
 
   scaler_select_bitformat( 555 );
@@ -230,9 +230,8 @@ cocoadisplay_allocate_colours( int numColours, uint16_t *colour_values,
   }
 }
 
-/* Resize the emulator window to match the unscaled framebuffer (set by
-   uidisplay_init from per-machine dimensions) times the current scaler
-   factor. Mirrors gtkdisplay_load_gfx_mode's gtk_window_resize call.
+/* Resize the emulator window after an explicit scaler change to match the
+   unscaled framebuffer times the current scaler factor.
 
    Callers may be on a worker thread (fuse_init runs on the emulator thread
    spawned by -[Emulator connectWithPorts:]) or the main thread
@@ -283,14 +282,12 @@ uidisplay_init( int width, int height )
 
   init_scalers();
 
-  if ( scaler_select_scaler( current_scaler ) )
-    scaler_select_scaler( SCALER_NORMAL );
+  if ( scaler_activate_scaler( current_scaler ) )
+    scaler_activate_scaler( SCALER_NORMAL );
 
   [buffered_screen_lock lock];
   cocoadisplay_load_gfx_mode();
   [buffered_screen_lock unlock];
-
-  cocoadisplay_resize_window();
 
   /* We can now output error messages to our output device */
   display_ui_initialised = 1;
@@ -377,7 +374,10 @@ uidisplay_hotswap_gfx_mode( void )
 
   free( saved_pixels );
 
-  cocoadisplay_resize_window();
+  if( uidisplay_take_next_hotswap_reason() ==
+      UIDISPLAY_HOTSWAP_REASON_SCALER_EXPLICIT ) {
+    cocoadisplay_resize_window();
+  }
 
   fuse_emulation_unpause();
 
