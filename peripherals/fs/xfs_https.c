@@ -84,6 +84,7 @@ struct https_buffer_info_t
     void* data;                          // Buffer pointer
     size_t size;                         // Current buffer size
     size_t capacity;                     // Current buffer capacity
+    size_t expected_size;                // Fixed response size when provided
 };
 
 // Helper function to build full URL from base URL + path
@@ -359,6 +360,10 @@ static int write_buffer_callback(void *param, unsigned char *buf, size_t length,
               param, (void*)buf, length, position, content_length);
     
     struct https_buffer_info_t* buffer_info = (struct https_buffer_info_t*)param;
+    if (content_length > 0 && buffer_info->expected_size == 0)
+    {
+        buffer_info->expected_size = content_length;
+    }
     
     // If we know the content length, pre-allocate buffer
     if (content_length > 0 && buffer_info->capacity == 0)
@@ -845,7 +850,7 @@ static int16_t https_open(const struct xfs_engine_mount_t* engine, struct xfs_ha
     }
     
     // Build full URL
-    char url[256];
+    char url[512];
     if (build_https_url(mount_data->url, path, url, sizeof(url)) != 0)
     {
         XFS_DEBUG("https: open failed: invalid URL\n");
@@ -869,6 +874,16 @@ static int16_t https_open(const struct xfs_engine_mount_t* engine, struct xfs_ha
     if (httpc_get(&tls_sck, url, write_buffer_callback, &buffer_info) != HTTPC_OK)
     {
         XFS_DEBUG("https: open failed: httpc_get error\n");
+        if (buffer_info.data)
+            libspectrum_free(buffer_info.data);
+        libspectrum_free(https_handle);
+        return XFS_ERR_IO;
+    }
+
+    if (buffer_info.expected_size > 0 && buffer_info.size != buffer_info.expected_size)
+    {
+        XFS_DEBUG("https: open failed: short download bytes=%zu expected=%zu\n",
+                  buffer_info.size, buffer_info.expected_size);
         if (buffer_info.data)
             libspectrum_free(buffer_info.data);
         libspectrum_free(https_handle);
@@ -995,9 +1010,9 @@ static int16_t https_close(const struct xfs_engine_mount_t* engine, struct xfs_h
 }
 
 // Seek within downloaded blob (read_pos)
-static int32_t https_lseek(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, uint32_t offset, uint8_t whence)
+static int32_t https_lseek(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, int32_t offset, uint8_t whence)
 {
-    XFS_DEBUG("https: lseek offset=%lu whence=%d\n", (unsigned long)offset, whence);
+    XFS_DEBUG("https: lseek offset=%ld whence=%d\n", (long)offset, whence);
     (void)engine;
 
     struct xfs_handle_https_file_t *https_handle = get_https_file_handle(handle);
@@ -1008,31 +1023,34 @@ static int32_t https_lseek(const struct xfs_engine_mount_t* engine, struct xfs_h
     }
 
     const size_t sz = https_handle->blob_size;
-    size_t new_pos = https_handle->read_pos;
+    int64_t new_pos;
 
     if (whence == 0) /* SEEK_SET */
-        new_pos = (size_t)offset;
+        new_pos = offset;
     else if (whence == 1) /* SEEK_CUR */
-        new_pos = https_handle->read_pos + (size_t)offset;
+        new_pos = (int64_t)https_handle->read_pos + offset;
     else if (whence == 2) /* SEEK_END */
-        new_pos = sz + (size_t)offset;
+        new_pos = (int64_t)sz + offset;
     else
     {
         XFS_DEBUG("https: lseek failed: invalid whence\n");
         return XFS_ERR_INVAL;
     }
 
-    if (new_pos > sz)
-        new_pos = sz;
-
-    https_handle->read_pos = new_pos;
-
-    if (new_pos > (size_t)INT32_MAX)
+    if (new_pos < 0)
+    {
+        XFS_DEBUG("https: lseek failed: negative position\n");
+        return XFS_ERR_INVAL;
+    }
+    if (new_pos > (int64_t)sz)
+        new_pos = (int64_t)sz;
+    if (new_pos > INT32_MAX)
     {
         XFS_DEBUG("https: lseek: position exceeds int32_t range\n");
         return XFS_ERR_INVAL;
     }
 
+    https_handle->read_pos = (size_t)new_pos;
     return (int32_t)new_pos;
 }
 
@@ -1192,6 +1210,7 @@ static int16_t https_readdir(const struct xfs_engine_mount_t* engine, struct xfs
     
     // Fill xfs_stat_info structure
     memset(info, 0, sizeof(*info));
+    info->storage = FS_STORAGE_RAM;
     
     if (entry->is_dir)
     {
@@ -1351,6 +1370,7 @@ static int16_t https_stat(const struct xfs_engine_mount_t* engine, const char* p
     {
         XFS_DEBUG("https: stat found in cache: '%s' in '%s'\n", entry_name, dir_path);
         memset(stat_info, 0, sizeof(*stat_info));
+        stat_info->storage = FS_STORAGE_RAM;
         
         if (cached_entry->is_dir)
         {
@@ -1416,6 +1436,7 @@ static int16_t https_stat(const struct xfs_engine_mount_t* engine, const char* p
     
     // Found the entry, fill stat structure
     memset(stat_info, 0, sizeof(*stat_info));
+    stat_info->storage = FS_STORAGE_RAM;
     
     if (found_entry->is_dir)
     {
@@ -1496,6 +1517,14 @@ static int16_t https_rename(const struct xfs_engine_mount_t* engine, const char*
     return XFS_ERR_INVAL;
 }
 
+static int16_t https_chmod(const struct xfs_engine_mount_t* engine, const char* path, uint16_t mode)
+{
+    (void)engine;
+    (void)path;
+    (void)mode;
+    return XFS_ERR_INVAL;
+}
+
 // Free handle resources (calls https_close / https_closedir first so teardown matches normal close)
 static void https_free_handle(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle)
 {
@@ -1555,6 +1584,7 @@ struct xfs_engine_t https_engine = {
     .chdir = https_chdir,
     .getcwd = https_getcwd,
     .rename = https_rename,
+    .chmod = https_chmod,
     .free_handle = https_free_handle,
 };
 
@@ -1579,5 +1609,6 @@ struct xfs_engine_t http_engine = {
     .chdir = https_chdir,
     .getcwd = https_getcwd,
     .rename = https_rename,
+    .chmod = https_chmod,
     .free_handle = https_free_handle,
 };

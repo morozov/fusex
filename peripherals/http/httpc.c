@@ -721,6 +721,7 @@ static int httpc_parse_response_field(httpc_t *h, char *line, size_t length) {
 #define X_MACRO_FIELDS \
 	X("Transfer-Encoding:", FLD_TRANSFER_ENCODING) \
 	X("Content-Length:",    FLD_CONTENT_LENGTH)\
+	X("Content-Range:",     FLD_CONTENT_RANGE)\
 	X("Accept-Ranges:",     FLD_ACCEPT_RANGES)\
 	X("Connection:",        FLD_CONNECTION)\
 	X("Location:",          FLD_REDIRECT)
@@ -786,8 +787,25 @@ static int httpc_parse_response_field(httpc_t *h, char *line, size_t length) {
 		case FLD_CONTENT_LENGTH:
 			if (httpc_scan_number(&line[fld->length], &h->length, 10) < 0)
 				return error(h, "invalid content length: %s", line);
+			if (h->os->response == 206 && h->position) {
+				if ((h->length + h->position) < h->length)
+					return error(h, "content length overflow");
+				h->length += h->position;
+			}
 			h->length_set = 1;
 			return info(h, "Content Length: %lu", (unsigned long)h->length);
+		case FLD_CONTENT_RANGE: {
+			char *slash = strchr(&line[fld->length], '/');
+			if (!slash)
+				return error(h, "invalid content range: %s", line);
+			slash++;
+			if (!*slash || *slash == '*')
+				return info(h, "Content Range: %s", line);
+			if (httpc_scan_number(slash, &h->length, 10) < 0)
+				return error(h, "invalid content range total: %s", line);
+			h->length_set = 1;
+			return info(h, "Content Range total: %lu", (unsigned long)h->length);
+		}
 		case FLD_REDIRECT:
 			if (h->os->response >= 300 && h->os->response < 399) {
 				if (h->redirects++ > h->redirects_max)
@@ -892,6 +910,10 @@ static int httpc_parse_response_header_start_line(httpc_t *h, char *line, const 
 	if (httpc_string_to_number((const char *)&line[i], &resp, j - i, 10) < 0)
 		return error(h, "invalid response number: %s", line);
 	os->response = resp;
+	if (os->response == 200 && h->position) {
+		h->position = 0;
+		h->max = 0;
+	}
 	while (C_isspace(line[j]))
 		j++;
 	if(j >= length)

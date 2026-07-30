@@ -68,6 +68,9 @@ enum xfs_whence_flags {
 #define XFS_CMD_LSEEK (16)
 #define XFS_CMD_UNMOUNT (17)
 #define XFS_CMD_MOUNT_INFO (18)
+#define XFS_CMD_CHMOD (19)
+
+#define XFS_CHMOD_COMMIT_FLASH (0x8000)
 
 #define XFS_STATUS_IDLE (0)
 #define XFS_STATUS_BUSY (1)
@@ -84,10 +87,20 @@ struct xfs_engine_mount_t
     void* mount_data;
 };
 
+enum
+{
+    FS_STORAGE_RAM = 0,
+    FS_STORAGE_FLASH = 1,
+};
+
 struct xfs_stat_info
 {
     uint8_t type;      // XFS_TYPE_REG or XFS_TYPE_DIR
+    uint8_t storage;   // FS_STORAGE_RAM or FS_STORAGE_FLASH
     uint32_t size;     // File size (for files)
+    uint32_t atime;    // Unix access time, or 0 when unavailable
+    uint32_t mtime;    // Unix modification time, or 0 when unavailable
+    uint32_t ctime;    // Unix change/create time, or 0 when unavailable
     char name[64];    // File/directory name
 };
 
@@ -112,7 +125,7 @@ struct xfs_engine_t
     const uint8_t* (*direct_read)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, size_t* out_len);
     int32_t (*write)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, const void* buffer, uint32_t size);
     int16_t (*close)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle);
-    int32_t (*lseek)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, uint32_t offset, uint8_t whence);
+    int32_t (*lseek)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, int32_t offset, uint8_t whence);
 
     // Directory operations
     int16_t (*opendir)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, const char* path);
@@ -127,6 +140,7 @@ struct xfs_engine_t
     int16_t (*chdir)(const struct xfs_engine_mount_t* engine, const char* path);
     int16_t (*getcwd)(const struct xfs_engine_mount_t* engine, char* buffer, uint16_t size);
     int16_t (*rename)(const struct xfs_engine_mount_t* engine, const char* old_path, const char* new_path);
+    int16_t (*chmod)(const struct xfs_engine_mount_t* engine, const char* path, uint16_t mode);
 
     // Handle management
     void (*free_handle)(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle);
@@ -227,9 +241,15 @@ struct xfs_args_rename_t
 
 struct xfs_args_lseek_t
 {
-    uint32_t offset; // FSIZE_t is uint32_t
+    int32_t offset;
     uint8_t whence;
     uint8_t reserved[251];
+};
+
+struct xfs_args_chmod_t
+{
+    char path[254];
+    uint16_t mode;
 };
 
 // Spectranet stat structure (matches stat.inc format)
@@ -262,6 +282,7 @@ union xfs_arguments_t
     struct xfs_args_getcwd_t getcwd;
     struct xfs_args_rename_t rename;
     struct xfs_args_lseek_t lseek;
+    struct xfs_args_chmod_t chmod;
 };
 
 struct xfs_registers_t
