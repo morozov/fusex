@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -77,6 +77,22 @@
                             </menuItem>
                             <menuItem title="Open Recent" id="509">
                                 <menu key="submenu" title="Open Recent" id="510"/>
+                            </menuItem>
+                            <menuItem title="Open Extra Folder" id="n5X-Gk-jqw">
+                                <menu key="submenu" title="Open Extra Folder" id="edp-Hu-hXq">
+                                    <items>
+                                        <menuItem title="Spectranext RAMFS" id="UMd-bx-e6Y">
+                                            <connections>
+                                                <action selector="openSpectranetRAMFSFolder:" target="346" id="hPg-lO-Lnu"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Supplementary ROMs" id="naW-Uv-0mo">
+                                            <connections>
+                                                <action selector="openSupplementaryROMsFolder:" target="346" id="XJp-lE-Vew"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="297">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
@@ -755,7 +771,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="496" y="324" width="640" height="480"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1085"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1084"/>
             <value key="minSize" type="size" width="213" height="107"/>
             <view key="contentView" id="878">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="480"/>

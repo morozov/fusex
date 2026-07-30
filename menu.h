@@ -54,6 +54,8 @@
  */
 
 MENU_CALLBACK( menu_file_open );
+MENU_CALLBACK( menu_file_openextrafolders_spectranetramfs );
+MENU_CALLBACK( menu_file_openextrafolders_supplementaryroms );
 MENU_CALLBACK( menu_file_recording_continuerecording );
 MENU_CALLBACK( menu_file_recording_insertsnapshot );
 MENU_CALLBACK( menu_file_recording_rollback );

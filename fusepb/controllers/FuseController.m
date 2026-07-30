@@ -43,6 +43,7 @@
 
 #import "DisplayOpenGLView.h"
 
+#include "compat.h"
 #include "debugger/debugger.h"
 #include "event.h"
 #include "fuse.h"
@@ -209,6 +210,45 @@ is_beta_active( void ) {
            periph_is_active( PERIPH_TYPE_BETA128 ) ||
            periph_is_active( PERIPH_TYPE_BETA128_PENTAGON ) ||
            periph_is_active( PERIPH_TYPE_BETA128_PENTAGON_LATE ) );
+}
+
+static NSString *
+cocoaui_user_folder_path( NSString *folderName )
+{
+  return [[NSString stringWithUTF8String:compat_get_config_path()]
+          stringByAppendingPathComponent:folderName];
+}
+
+static void
+cocoaui_open_user_folder( NSString *folderName, NSString *displayName )
+{
+  NSString *path = cocoaui_user_folder_path( folderName );
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSError *error = nil;
+  BOOL isDirectory = NO;
+
+  if( [fileManager fileExistsAtPath:path isDirectory:&isDirectory] &&
+      !isDirectory ) {
+    NSRunAlertPanel( @"Cannot Open Folder",
+                     @"%@ exists, but it is not a folder.", @"OK", nil, nil,
+                     path );
+    return;
+  }
+
+  if( !isDirectory &&
+      ![fileManager createDirectoryAtPath:path withIntermediateDirectories:YES
+                              attributes:nil error:&error] ) {
+    NSRunAlertPanel( @"Cannot Open Folder",
+                     @"Could not create the %@ folder at %@. %@", @"OK", nil,
+                     nil, displayName, path, [error localizedDescription] );
+    return;
+  }
+
+  if( ![[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:path]] ) {
+    NSRunAlertPanel( @"Cannot Open Folder",
+                     @"Could not open the %@ folder at %@.", @"OK", nil, nil,
+                     displayName, path );
+  }
 }
 
 @implementation FuseController
@@ -697,6 +737,16 @@ error:
   free(filename);
 
   [[DisplayOpenGLView instance] unpause];
+}
+
+- (IBAction)openSpectranetRAMFSFolder:(id)sender
+{
+  cocoaui_open_user_folder( @"xfs", @"Spectranext RAMFS" );
+}
+
+- (IBAction)openSupplementaryROMsFolder:(id)sender
+{
+  cocoaui_open_user_folder( @"roms", @"Supplementary ROMs" );
 }
 
 - (IBAction)reset:(id)sender
