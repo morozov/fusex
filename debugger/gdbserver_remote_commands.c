@@ -3,10 +3,12 @@
 
 #include <ctype.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "fuse.h"
 #include "libspectrum.h"
+#include "peripherals/fs/xfs.h"
 #include "peripherals/spectranet.h"
 #include "snapshot.h"
 #include "utils.h"
@@ -106,9 +108,83 @@ static uint8_t remote_command_dump( const char *args )
     return 1;
 }
 
+static uint8_t remote_command_spectranet_info( const char *args GCC_UNUSED )
+{
+    spectranet_paging_info_t info = spectranet_get_paging_info();
+    char buffer[128];
+
+    snprintf( buffer, sizeof( buffer ),
+              "Spectranet available: %s\n"
+              "Spectranet paged in: %s\n"
+              "Page A: 0x%02x\n"
+              "Page B: 0x%02x\n",
+              info.available ? "yes" : "no",
+              info.paged ? "yes" : "no",
+              info.page_a,
+              info.page_b );
+    gdbserver_send_remote_console_output( buffer );
+
+    return 0;
+}
+
+static uint8_t remote_command_xfs_debug( const char *args )
+{
+    int enable;
+    const char *end;
+    size_t length;
+    char buffer[64];
+
+    args = skip_spaces( args );
+
+    if( !args || !*args ) {
+        gdbserver_send_remote_console_output(
+            "Usage: xfs-debug <on|off|1|0>\n" );
+        return 1;
+    }
+
+    end = args;
+    while( *end && !isspace( (unsigned char)*end ) ) end++;
+    length = end - args;
+
+    if( length == 2 && !strncmp( args, "on", length ) ) {
+        enable = 1;
+    } else if( length == 1 && !strncmp( args, "1", length ) ) {
+        enable = 1;
+    } else if( length == 4 && !strncmp( args, "true", length ) ) {
+        enable = 1;
+    } else if( length == 3 && !strncmp( args, "off", length ) ) {
+        enable = 0;
+    } else if( length == 1 && !strncmp( args, "0", length ) ) {
+        enable = 0;
+    } else if( length == 5 && !strncmp( args, "false", length ) ) {
+        enable = 0;
+    } else {
+        gdbserver_send_remote_console_output(
+            "Usage: xfs-debug <on|off|1|0>\n" );
+        return 1;
+    }
+
+    end = skip_spaces( end );
+    if( end && *end ) {
+        gdbserver_send_remote_console_output(
+            "Usage: xfs-debug <on|off|1|0>\n" );
+        return 1;
+    }
+
+    xfs_debug_enable( enable );
+
+    snprintf( buffer, sizeof( buffer ), "XFS debug: %s\n",
+              xfs_debug_is_enabled() ? "on" : "off" );
+    gdbserver_send_remote_console_output( buffer );
+
+    return 0;
+}
+
 const struct remote_command_entry_t remote_commands[] = {
     { "help", remote_command_help },
     { "reset", remote_command_reset },
     { "dump", remote_command_dump },
+    { "spectranet-info", remote_command_spectranet_info },
+    { "xfs-debug", remote_command_xfs_debug },
     { NULL, NULL }
 };

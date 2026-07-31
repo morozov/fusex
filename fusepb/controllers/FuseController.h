@@ -114,6 +114,8 @@
 - (IBAction)mdr_writep:(id)sender;
 - (IBAction)nmi:(id)sender;
 - (IBAction)open:(id)sender;
+- (IBAction)openSpectranetRAMFSFolder:(id)sender;
+- (IBAction)openSupplementaryROMsFolder:(id)sender;
 - (IBAction)open_screen:(id)sender;
 - (IBAction)pause:(id)sender;
 - (IBAction)profiler_start:(id)sender;

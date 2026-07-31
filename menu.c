@@ -23,8 +23,20 @@
 
 #include "config.h"
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#ifdef UI_WIN32
+#include <windows.h>
+#include <direct.h>
+#include <shellapi.h>
+#endif
+
 #include "libspectrum.h"
 
+#include "compat.h"
 #include "event.h"
 #include "fuse.h"
 #include "menu.h"
@@ -68,6 +80,78 @@ static int menu_select_machine_roms( libspectrum_machine machine, size_t start,
 static int menu_select_peripheral_roms( const char *peripheral_name,
 					size_t start, size_t n );
 
+static int
+menu_get_extra_folder_path( const char *folder, char *path, size_t length )
+{
+  int bytes_written = snprintf( path, length, "%s" FUSE_DIR_SEP_STR "%s",
+				compat_get_config_path(), folder );
+
+  if( bytes_written < 0 || bytes_written >= (int)length ) return 1;
+
+#ifdef UI_WIN32
+  if( _mkdir( path ) != 0 && errno != EEXIST ) return 1;
+#else
+  if( mkdir( path, 0755 ) != 0 && errno != EEXIST ) return 1;
+#endif
+
+  {
+    struct stat path_stat;
+
+    if( stat( path, &path_stat ) != 0 || !S_ISDIR( path_stat.st_mode ) ) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+static void
+menu_file_open_extra_folder( const char *folder, const char *display_name )
+{
+  char path[ PATH_MAX ];
+
+  if( menu_get_extra_folder_path( folder, path, sizeof( path ) ) ) {
+    ui_error( UI_ERROR_ERROR, "Could not create %s folder", display_name );
+    return;
+  }
+
+#ifdef UI_GTK
+  {
+    char *uri = g_filename_to_uri( path, NULL, NULL );
+    GError *error = NULL;
+
+    if( uri == NULL ) {
+      ui_error( UI_ERROR_ERROR, "Could not open %s folder", display_name );
+      return;
+    }
+
+    if( !gtk_show_uri( NULL, uri, GDK_CURRENT_TIME, &error ) ) {
+      ui_error( UI_ERROR_ERROR, "Could not open %s folder: %s",
+		display_name, error ? error->message : "unknown error" );
+      if( error ) g_error_free( error );
+    }
+
+    g_free( uri );
+  }
+#elif defined UI_WIN32
+  if( (INT_PTR)ShellExecuteA( NULL, "open", path, NULL, NULL,
+			      SW_SHOWNORMAL ) <= 32 ) {
+    ui_error( UI_ERROR_ERROR, "Could not open %s folder", display_name );
+  }
+#else
+  {
+    char command[ PATH_MAX + 32 ];
+
+    /* Best-effort open for widget/SDL UIs on Unix-like systems */
+    snprintf( command, sizeof( command ), "xdg-open \"%s\" >/dev/null 2>&1 &",
+	      path );
+    if( system( command ) != 0 ) {
+      ui_error( UI_ERROR_WARNING, "%s folder: %s", display_name, path );
+    }
+  }
+#endif
+}
+
 MENU_CALLBACK( menu_file_open )
 {
   char *filename;
@@ -84,6 +168,16 @@ MENU_CALLBACK( menu_file_open )
   display_refresh_all();
 
   fuse_emulation_unpause();
+}
+
+MENU_CALLBACK( menu_file_openextrafolders_spectranetramfs )
+{
+  menu_file_open_extra_folder( "xfs", "Spectranext RAMFS" );
+}
+
+MENU_CALLBACK( menu_file_openextrafolders_supplementaryroms )
+{
+  menu_file_open_extra_folder( "roms", "Supplementary ROMs" );
 }
 
 MENU_CALLBACK( menu_file_recording_insertsnapshot )

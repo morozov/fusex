@@ -26,11 +26,15 @@
 #include <config.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/stat.h>
 #include <errno.h>
+#if defined(WIN32) || defined(_WIN32)
+#include <direct.h>
+#endif
 
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFBundle.h>
@@ -65,6 +69,23 @@ compat_is_absolute_path( const char *path )
   return path[0] == '/';
 }
 
+static int
+compat_get_user_rom_path( char *path, size_t length )
+{
+  int bytes_written = snprintf( path, length, "%s" FUSE_DIR_SEP_STR "roms",
+                                compat_get_config_path() );
+
+  if( bytes_written < 0 || bytes_written >= length ) return 0;
+
+#if defined(WIN32) || defined(_WIN32)
+  if( _mkdir( path ) != 0 && errno != EEXIST ) return 0;
+#else
+  if( mkdir( path, 0755 ) != 0 && errno != EEXIST ) return 0;
+#endif
+
+  return 1;
+}
+
 int
 compat_get_next_path( path_context *ctx )
 {
@@ -91,8 +112,17 @@ compat_get_next_path( path_context *ctx )
     CFRelease( resource_url );
     return retval;
 
-    /* There is no second option */
-  case 1: return 0;
+    /* Look in the user's supplementary ROM directory */
+  case 1:
+    if( ctx->type == UTILS_AUXILIARY_ROM &&
+        compat_get_user_rom_path( ctx->path, PATH_MAX ) ) {
+      return 1;
+    }
+    return 0;
+
+    /* No more locations */
+  case 2:
+    return 0;
   }
 
   ui_error( UI_ERROR_ERROR, "unknown path_context state %d", ctx->state );

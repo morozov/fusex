@@ -102,6 +102,23 @@ compat_is_absolute_path( const char *path )
   return path[0] == '/';
 }
 
+static int
+compat_get_user_rom_path( char *path, size_t length )
+{
+  const char *config_path = compat_get_config_path();
+  int bytes_written;
+
+  if( !config_path ) return 0;
+
+  bytes_written = snprintf( path, length, "%s" FUSE_DIR_SEP_STR "roms",
+                            config_path );
+  if( bytes_written < 0 || bytes_written >= (int)length ) return 0;
+
+  if( mkdir( path, 0755 ) != 0 && errno != EEXIST ) return 0;
+
+  return 1;
+}
+
 int
 compat_get_next_path( path_context *ctx )
 {
@@ -150,7 +167,15 @@ compat_get_next_path( path_context *ctx )
     strncpy( ctx->path, path2, PATH_MAX ); buffer[ PATH_MAX - 1 ] = '\0';
     return 1;
 
-  case 3: return 0;
+    /* Then the user's supplementary ROM directory */
+  case 3:
+    if( ctx->type == UTILS_AUXILIARY_ROM &&
+        compat_get_user_rom_path( ctx->path, PATH_MAX ) ) {
+      return 1;
+    }
+    return 0;
+
+  case 4: return 0;
   }
   ui_error( UI_ERROR_ERROR, "unknown path_context state %d", ctx->state );
   fuse_abort();

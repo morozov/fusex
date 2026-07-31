@@ -60,6 +60,13 @@ typedef struct {
     } value;
 } spectranet_config_option_t;
 
+typedef struct {
+    int available;
+    int paged;
+    int page_a;
+    int page_b;
+} spectranet_paging_info_t;
+
 // get currently loaded config
 const uint8_t* spectranet_config_get_memory(void);
 
@@ -108,5 +115,6 @@ extern libspectrum_word spectranet_programmable_trap;
 /* Get pointer to Spectranet ROM configuration page (page 0x1F) */
 libspectrum_byte* spectranet_get_config_page(void);
 int spectranet_dump_ram( const char *filename );
+spectranet_paging_info_t spectranet_get_paging_info( void );
 
 #endif /* #ifndef FUSE_SPECTRANET_H */

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <sys/stat.h>
 #if defined(WIN32) || defined(_WIN32)
@@ -17,6 +18,7 @@
 
 #include "libspectrum.h"
 #include "../spectranet.h"
+#include "debugger/gdbserver.h"
 #include "memory_pages.h"
 #include "ui/ui.h"
 #include "compat.h"
@@ -27,9 +29,6 @@ volatile struct xfs_registers_t xfs_registers = {};
 // XFS debug logging control
 static bool xfs_debug_enabled = false;
 
-// Macro for XFS debug output (only prints if enabled)
-#define XFS_DEBUG(...) do { if (xfs_debug_enabled) printf(__VA_ARGS__); } while(0)
-
 // Function to enable/disable XFS debug logging
 void xfs_debug_enable(bool enable)
 {
@@ -39,6 +38,22 @@ void xfs_debug_enable(bool enable)
 bool xfs_debug_is_enabled(void)
 {
     return xfs_debug_enabled;
+}
+
+void xfs_debug_log(const char *format, ...)
+{
+    va_list args;
+    va_list remote_args;
+    char buffer[1024];
+
+    va_start(args, format);
+    va_copy(remote_args, args);
+    vprintf(format, args);
+    vsnprintf(buffer, sizeof(buffer), format, remote_args);
+    va_end(remote_args);
+    va_end(args);
+
+    gdbserver_send_remote_console_output(buffer);
 }
 
 // XFS base directory path

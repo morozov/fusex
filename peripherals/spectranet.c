@@ -777,6 +777,25 @@ spectranet_dump_ram( const char *filename )
   return utils_write_file( filename, src, SPECTRANET_RAM_LENGTH );
 }
 
+spectranet_paging_info_t
+spectranet_get_paging_info( void )
+{
+  spectranet_paging_info_t info;
+
+  info.available = spectranet_available;
+  info.paged = spectranet_paged;
+
+  if( spectranet_memory_allocated ) {
+    info.page_a = spectranet_current_map[1 * MEMORY_PAGES_IN_4K].page_num;
+    info.page_b = spectranet_current_map[2 * MEMORY_PAGES_IN_4K].page_num;
+  } else {
+    info.page_a = 0xff;
+    info.page_b = 0xff;
+  }
+
+  return info;
+}
+
 // Read 16-bit little-endian value from memory
 static uint16_t read_uint16(const uint8_t* memory, uint16_t offset)
 {
@@ -1389,6 +1408,14 @@ int
 spectranet_dump_ram( const char *filename GCC_UNUSED )
 {
   return 1;
+}
+
+spectranet_paging_info_t
+spectranet_get_paging_info( void )
+{
+  spectranet_paging_info_t info = { 0, 0, 0xff, 0xff };
+
+  return info;
 }
 
 int

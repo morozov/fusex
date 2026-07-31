@@ -9,8 +9,6 @@ struct xfs_engine_mount_t xfs_mounted_engines[4] = {0};
 // Handles array - shared between task and emulator  
 struct xfs_handle_t xfs_handles[XFS_MAX_FDS] = {0};
 
-#define XFS_DEBUG(...) do { if (xfs_debug_is_enabled()) printf(__VA_ARGS__); } while(0)
-
 // Helper functions
 static inline struct xfs_handle_t* get_handle(uint8_t handle)
 {
@@ -474,7 +472,7 @@ void xfs_handle_readdir(volatile struct xfs_registers_t* registers)
         return;
     }
 
-    struct xfs_stat_info info;
+    struct xfs_stat_info info = {0};
     const int16_t err = mounted_engine->engine->readdir(mounted_engine, h, &info);
     
     if (err < 0)
@@ -497,6 +495,17 @@ void xfs_handle_readdir(volatile struct xfs_registers_t* registers)
         {
             XFS_DEBUG("xfs: readdir success name=%s\n", info.name);
             strcpy((char*)registers->workspace, info.name);
+            volatile uint8_t* tail = registers->workspace + strlen(info.name) + 1;
+            tail[0] = 'X';
+            tail[1] = info.type;
+            tail[2] = (uint8_t)(info.size & 0xff);
+            tail[3] = (uint8_t)((info.size >> 8) & 0xff);
+            tail[4] = (uint8_t)((info.size >> 16) & 0xff);
+            tail[5] = (uint8_t)((info.size >> 24) & 0xff);
+            tail[6] = (uint8_t)(info.mtime & 0xff);
+            tail[7] = (uint8_t)((info.mtime >> 8) & 0xff);
+            tail[8] = (uint8_t)((info.mtime >> 16) & 0xff);
+            tail[9] = (uint8_t)((info.mtime >> 24) & 0xff);
             registers->result = 0;
         }
         registers->status = XFS_STATUS_COMPLETE;
@@ -551,7 +560,7 @@ void xfs_handle_stat(volatile struct xfs_registers_t* registers)
         return;
     }
     
-    struct xfs_stat_info info;
+    struct xfs_stat_info info = {0};
     const int16_t err = mounted_engine->engine->stat(mounted_engine, path, &info);
     
     if (err)
@@ -575,9 +584,9 @@ void xfs_handle_stat(volatile struct xfs_registers_t* registers)
         stat->uid = 0;
         stat->gid = 0;
         stat->size = (uint32_t)info.size;
-        stat->atime = 0;
-        stat->mtime = 0;
-        stat->ctime = 0;
+        stat->atime = info.atime;
+        stat->mtime = info.mtime;
+        stat->ctime = info.ctime;
         uint8_t* strings = (uint8_t*)registers->workspace + 22;
         strings[0] = 0;
         strings[1] = 0;
@@ -775,15 +784,56 @@ void xfs_handle_rename(volatile struct xfs_registers_t* registers)
     }
 }
 
+void xfs_handle_chmod(volatile struct xfs_registers_t* registers)
+{
+    const char* path = (const char*)registers->arguments.chmod.path;
+    const uint16_t mode = registers->arguments.chmod.mode;
+    const uint8_t mount_point = registers->mount_point;
+    const struct xfs_engine_mount_t* mounted_engine = &xfs_mounted_engines[mount_point];
+
+    XFS_DEBUG("xfs: chmod path=%s mode=0x%04x\n", path, mode);
+
+    if (!ensure_mounted(mount_point))
+    {
+        XFS_DEBUG("xfs: chmod failed: not mounted\n");
+        registers->result = XFS_ERR_IO;
+        registers->status = XFS_STATUS_ERROR;
+        return;
+    }
+
+    if (!mounted_engine->engine->chmod)
+    {
+        XFS_DEBUG("xfs: chmod failed: not supported\n");
+        registers->result = XFS_ERR_INVAL;
+        registers->status = XFS_STATUS_ERROR;
+        return;
+    }
+
+    const int16_t err = mounted_engine->engine->chmod(mounted_engine, path, mode);
+
+    if (err)
+    {
+        XFS_DEBUG("xfs: chmod failed: result=%d\n", err);
+        registers->result = err;
+        registers->status = XFS_STATUS_ERROR;
+    }
+    else
+    {
+        XFS_DEBUG("xfs: chmod success\n");
+        registers->result = 0;
+        registers->status = XFS_STATUS_COMPLETE;
+    }
+}
+
 void xfs_handle_lseek(volatile struct xfs_registers_t* registers)
 {
     uint8_t handle = registers->file_handle;
-    uint32_t offset = registers->arguments.lseek.offset;
+    int32_t offset = registers->arguments.lseek.offset;
     uint8_t whence = registers->arguments.lseek.whence;
     const uint8_t mount_point = registers->mount_point;
     const struct xfs_engine_mount_t* mounted_engine = &xfs_mounted_engines[mount_point];
 
-    XFS_DEBUG("xfs: lseek handle=%d offset=%lu whence=%d\n", handle, (unsigned long)offset, whence);
+    XFS_DEBUG("xfs: lseek handle=%d offset=%ld whence=%d\n", handle, (long)offset, whence);
     
     struct xfs_handle_t* h = get_handle(handle);
     if (h == NULL || h->type != XFS_HANDLE_TYPE_FILE)
@@ -916,6 +966,11 @@ void xfs_handle_command(volatile struct xfs_registers_t* registers)
             case XFS_CMD_MOUNT_INFO:
             {
                 xfs_handle_mount_info(registers);
+                break;
+            }
+            case XFS_CMD_CHMOD:
+            {
+                xfs_handle_chmod(registers);
                 break;
             }
             default:

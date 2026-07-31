@@ -26,9 +26,6 @@
 #include "libspectrum.h"
 #include "ui/ui.h"
 
-// Macro for XFS debug output
-#define XFS_DEBUG(...) do { if (xfs_debug_is_enabled()) printf(__VA_ARGS__); } while(0)
-
 // Convert POSIX errno to XFS error code (use negative errno)
 static int16_t xfs_error_from_errno(int err)
 {
@@ -86,6 +83,7 @@ struct xfs_fs_file_handle_t
 struct xfs_fs_dir_handle_t
 {
     DIR *dir;
+    char path[PATH_MAX];
 };
 
 static inline struct xfs_fs_mount_data_t* get_mount_data(const struct xfs_engine_mount_t* mount)
@@ -310,7 +308,7 @@ static int16_t fs_close(const struct xfs_engine_mount_t* engine, struct xfs_hand
 }
 
 // Seek in file
-static int32_t fs_lseek(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, uint32_t offset, uint8_t whence)
+static int32_t fs_lseek(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle, int32_t offset, uint8_t whence)
 {
     struct xfs_fs_file_handle_t* file_handle = get_file_handle(handle);
     if (!file_handle) {
@@ -355,6 +353,8 @@ static int16_t fs_opendir(const struct xfs_engine_mount_t* engine, struct xfs_ha
         libspectrum_free(dir_handle);
         return xfs_error_from_errno(errno);
     }
+    strncpy(dir_handle->path, full_path, sizeof(dir_handle->path) - 1);
+    dir_handle->path[sizeof(dir_handle->path) - 1] = '\0';
     
     handle->type = XFS_HANDLE_TYPE_DIR;
     handle->data = dir_handle;
@@ -373,7 +373,7 @@ static int16_t fs_readdir(const struct xfs_engine_mount_t* engine, struct xfs_ha
     struct dirent *entry;
     int err = 0;
     
-    // Read directory entries, skipping "." and ".."
+    // Read directory entries, skipping "."
     errno = 0;
     do
     {
@@ -386,8 +386,8 @@ static int16_t fs_readdir(const struct xfs_engine_mount_t* engine, struct xfs_ha
             }
             break; // End of directory or error
         }
-        // Skip "." and ".." entries
-    } while (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0);
+        // Skip "." entries
+    } while (strcmp(entry->d_name, ".") == 0);
     
     if (err != 0)
     {
@@ -400,16 +400,24 @@ static int16_t fs_readdir(const struct xfs_engine_mount_t* engine, struct xfs_ha
         // End of directory
         return 0;
     }
-    
+
+    memset(info, 0, sizeof(*info));
+    info->storage = FS_STORAGE_FLASH;
+
     // Copy filename
     strncpy(info->name, entry->d_name, sizeof(info->name) - 1);
     info->name[sizeof(info->name) - 1] = '\0';
     
     // Determine type and size
-    char* full_path = build_path(entry->d_name);
+    char full_path[PATH_MAX];
+    snprintf(full_path, sizeof(full_path), "%s/%s", dir_handle->path, entry->d_name);
     struct stat st;
     if (stat(full_path, &st) == 0)
     {
+        info->atime = (uint32_t)st.st_atime;
+        info->mtime = (uint32_t)st.st_mtime;
+        info->ctime = (uint32_t)st.st_ctime;
+
         if (S_ISDIR(st.st_mode))
         {
             info->type = XFS_TYPE_DIR;
@@ -464,6 +472,12 @@ static int16_t fs_stat(const struct xfs_engine_mount_t* engine, const char* path
         XFS_DEBUG("fs: stat failed: %s\n", strerror(errno));
         return xfs_error_from_errno(errno);
     }
+
+    memset(stat_info, 0, sizeof(*stat_info));
+    stat_info->storage = FS_STORAGE_FLASH;
+    stat_info->atime = (uint32_t)st.st_atime;
+    stat_info->mtime = (uint32_t)st.st_mtime;
+    stat_info->ctime = (uint32_t)st.st_ctime;
     
     // Extract filename from path
     const char* filename = strrchr(path, '/');
@@ -601,6 +615,15 @@ static int16_t fs_rename(const struct xfs_engine_mount_t* engine, const char* ol
     return XFS_ERR_OK;
 }
 
+static int16_t fs_chmod(const struct xfs_engine_mount_t* engine, const char* path, uint16_t mode)
+{
+    (void)engine;
+    (void)path;
+    (void)mode;
+
+    return XFS_ERR_OK;
+}
+
 // Free handle
 static void fs_free_handle(const struct xfs_engine_mount_t* engine, struct xfs_handle_t* handle)
 {
@@ -636,6 +659,7 @@ struct xfs_engine_t xfs_ram_engine = {
     .unmount = fs_unmount,
     .open = fs_open,
     .read = fs_read,
+    .direct_read = NULL,
     .write = fs_write,
     .close = fs_close,
     .lseek = fs_lseek,
@@ -649,5 +673,6 @@ struct xfs_engine_t xfs_ram_engine = {
     .chdir = fs_chdir,
     .getcwd = fs_getcwd,
     .rename = fs_rename,
+    .chmod = fs_chmod,
     .free_handle = fs_free_handle,
 };
