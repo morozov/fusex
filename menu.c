@@ -25,9 +25,11 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #ifdef UI_WIN32
+#include <windows.h>
 #include <direct.h>
 #include <shellapi.h>
 #endif
@@ -132,12 +134,21 @@ menu_file_open_extra_folder( const char *folder, const char *display_name )
     g_free( uri );
   }
 #elif defined UI_WIN32
-  if( (INT_PTR)ShellExecute( NULL, "open", path, NULL, NULL,
-			     SW_SHOWNORMAL ) <= 32 ) {
+  if( (INT_PTR)ShellExecuteA( NULL, "open", path, NULL, NULL,
+			      SW_SHOWNORMAL ) <= 32 ) {
     ui_error( UI_ERROR_ERROR, "Could not open %s folder", display_name );
   }
 #else
-  ui_error( UI_ERROR_WARNING, "%s folder: %s", display_name, path );
+  {
+    char command[ PATH_MAX + 32 ];
+
+    /* Best-effort open for widget/SDL UIs on Unix-like systems */
+    snprintf( command, sizeof( command ), "xdg-open \"%s\" >/dev/null 2>&1 &",
+	      path );
+    if( system( command ) != 0 ) {
+      ui_error( UI_ERROR_WARNING, "%s folder: %s", display_name, path );
+    }
+  }
 #endif
 }
 
@@ -161,7 +172,7 @@ MENU_CALLBACK( menu_file_open )
 
 MENU_CALLBACK( menu_file_openextrafolders_spectranetramfs )
 {
-  menu_file_open_extra_folder( "xfs", "Spectranet RAMFS" );
+  menu_file_open_extra_folder( "xfs", "Spectranext RAMFS" );
 }
 
 MENU_CALLBACK( menu_file_openextrafolders_supplementaryroms )

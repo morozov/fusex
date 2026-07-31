@@ -190,7 +190,7 @@ if COMPAT_WIN32
 
 fuse_LDFLAGS = -mwindows
 fuse_SOURCES += windres.rc
-fuse_LDADD += -lcomctl32 -lwinmm $(WINSPARKLE_LIBS) windres.o
+fuse_LDADD += -lcomctl32 -lwinmm -lshell32 $(WINSPARKLE_LIBS) windres.o
 fuse_DEPENDENCIES += windres.o
 AM_CPPFLAGS += $(WINSPARKLE_CFLAGS)
 

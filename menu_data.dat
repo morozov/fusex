@@ -22,7 +22,7 @@
 _File, Branch
 File/_Open..., Item, F3
 File/Open E_xtra Folders, Branch
-File/Open Extra Folders/Spectranet _RAMFS, Item,, menu_file_openextrafolders_spectranetramfs
+File/Open Extra Folders/Spectranext _RAMFS, Item,, menu_file_openextrafolders_spectranetramfs
 File/Open Extra Folders/Supplementary _ROMs, Item,, menu_file_openextrafolders_supplementaryroms
 File/_Save Snapshot..., Item, F2
 
