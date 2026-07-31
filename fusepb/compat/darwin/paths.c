@@ -119,6 +119,10 @@ compat_get_next_path( path_context *ctx )
       return 1;
     }
     return 0;
+
+    /* No more locations */
+  case 2:
+    return 0;
   }
 
   ui_error( UI_ERROR_ERROR, "unknown path_context state %d", ctx->state );
