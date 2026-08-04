@@ -269,9 +269,21 @@ cocoadisplay_resize_window( void )
     frame.origin.x = old.origin.x;
     frame.origin.y = NSMaxY( old ) - frame.size.height;
 
-    /* A 4x scaler from a corner-positioned window can otherwise push the
-       title bar off-screen and make the window hard to recover. */
-    frame = [win constrainFrameRect:frame toScreen:[win screen]];
+    /* constrainFrameRect: only keeps the title bar reachable and would leave a
+       widened window off the right edge. Clamp last-write-wins so a window too
+       big to fit lands on the top-left. -screen is nil when fully off-screen. */
+    NSScreen *win_screen = [win screen] ?: [NSScreen mainScreen];
+    if( win_screen ) {
+      NSRect visible = [win_screen visibleFrame];
+
+      frame.origin.x = MIN( frame.origin.x, NSMaxX( visible ) - frame.size.width );
+      frame.origin.x = MAX( frame.origin.x, NSMinX( visible ) );
+      frame.origin.y = MAX( frame.origin.y, NSMinY( visible ) );
+      frame.origin.y = MIN( frame.origin.y, NSMaxY( visible ) - frame.size.height );
+    }
+
+    /* AppKit trims a frame taller than the visible area, and the 4:3
+       contentAspectRatio then pulls the width down to match. */
     [win setFrame:frame display:YES animate:YES];
   });
 }
