@@ -233,7 +233,8 @@ cocoadisplay_allocate_colours( int numColours, uint16_t *colour_values,
 }
 
 /* Resize the emulator window after an explicit scaler change to match the
-   unscaled framebuffer times the current scaler factor.
+   unscaled framebuffer times the current scaler factor, anchored at the
+   window's top-left corner.
 
    Callers may be on a worker thread (fuse_init runs on the emulator thread
    spawned by -[Emulator connectWithPorts:]) or the main thread
@@ -259,13 +260,15 @@ cocoadisplay_resize_window( void )
        read on main. */
     if( ( [win styleMask] & NSWindowStyleMaskFullScreen ) != 0 ) return;
 
-    /* Preserve the window's perceived centre; setContentSize: would anchor
-       the top-left and drift the centre across repeated scaler changes. */
     NSRect old = [win frame];
     NSRect frame = [win frameRectForContentRect:
                             NSMakeRect( 0, 0, size.width, size.height )];
-    frame.origin.x = NSMidX( old ) - frame.size.width / 2.0;
-    frame.origin.y = NSMidY( old ) - frame.size.height / 2.0;
+
+    /* AppKit's origin is the bottom-left one, so holding the top edge means
+       moving the origin down as the window grows. */
+    frame.origin.x = old.origin.x;
+    frame.origin.y = NSMaxY( old ) - frame.size.height;
+
     /* A 4x scaler from a corner-positioned window can otherwise push the
        title bar off-screen and make the window hard to recover. */
     frame = [win constrainFrameRect:frame toScreen:[win screen]];
