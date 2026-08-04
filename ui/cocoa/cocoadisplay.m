@@ -232,6 +232,27 @@ cocoadisplay_allocate_colours( int numColours, uint16_t *colour_values,
   }
 }
 
+/* Size the current scaler asks the window's content area to be. A window that
+   would not fit the screen ends up smaller than this. */
+static NSSize
+cocoadisplay_scaler_content_size( void )
+{
+  float factor = scaler_get_scaling_factor( current_scaler );
+
+  return NSMakeSize( image_width * factor, image_height * factor );
+}
+
+/* Content size most recently requested of the window; main thread only.
+
+   Holds what was requested rather than what AppKit granted: an oversized
+   frame comes back shrunk, and asking for that same oversized size again
+   still has to count as no change.
+
+   Seeded at the first rendered frame so that the first scaler change of a
+   session compares against the scaler in effect rather than against zero,
+   which would resize a window the user sized by hand and AppKit restored. */
+static NSSize last_resized_content_size = { 0.0, 0.0 };
+
 /* Resize the emulator window after an explicit scaler change to match the
    unscaled framebuffer times the current scaler factor, anchored at the
    window's top-left corner.
@@ -248,8 +269,7 @@ cocoadisplay_resize_window( void )
      AppKit keep the restored window frame until emulation is visibly running. */
   if( !display_ui_initialised || !window_resize_enabled ) return;
 
-  float factor = scaler_get_scaling_factor( current_scaler );
-  NSSize size = NSMakeSize( image_width * factor, image_height * factor );
+  NSSize size = cocoadisplay_scaler_content_size();
 
   dispatch_async( dispatch_get_main_queue(), ^{
     NSWindow *win = [[DisplayOpenGLView instance] window];
@@ -259,6 +279,11 @@ cocoadisplay_resize_window( void )
        authoritative state lives in the window's styleMask, which must be
        read on main. */
     if( ( [win styleMask] & NSWindowStyleMaskFullScreen ) != 0 ) return;
+
+    /* Recorded past the fullscreen bail above, so a scaler change made in
+       fullscreen does not claim a resize that never happened. */
+    if( NSEqualSizes( size, last_resized_content_size ) ) return;
+    last_resized_content_size = size;
 
     NSRect old = [win frame];
     NSRect frame = [win frameRectForContentRect:
@@ -552,7 +577,18 @@ uidisplay_frame_end( void )
 {
   int i;
 
-  window_resize_enabled = 1;
+  if( !window_resize_enabled ) {
+    /* Adopt the scaler already in effect as the baseline for the session.
+       Dispatched because last_resized_content_size belongs to the main
+       thread and this runs on the emulator one. */
+    NSSize size = cocoadisplay_scaler_content_size();
+
+    dispatch_async( dispatch_get_main_queue(), ^{
+      last_resized_content_size = size;
+    });
+
+    window_resize_enabled = 1;
+  }
 
   if( display_updated ) {
     /* obtain lock for buffered screen */
