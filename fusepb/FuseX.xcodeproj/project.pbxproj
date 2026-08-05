@@ -101,6 +101,7 @@
 		B61F466009121DF100C8096C /* DebuggerController.m in Sources */ = {isa = PBXBuildFile; fileRef = B632C6AF03E5368700A864FD /* DebuggerController.m */; };
 		B61F466209121DF100C8096C /* FuseMenus.m in Sources */ = {isa = PBXBuildFile; fileRef = B66EA7840401075300A864FD /* FuseMenus.m */; };
 		B61F466309121DF100C8096C /* scaler.c in Sources */ = {isa = PBXBuildFile; fileRef = B63ABD8D042F175200A864FD /* scaler.c */; };
+		FEC5107A347A105100000001 /* snes_ntsc.c in Sources */ = {isa = PBXBuildFile; fileRef = FEC51079347A105100000001 /* snes_ntsc.c */; };
 		B61F466409121DF100C8096C /* tc2068.c in Sources */ = {isa = PBXBuildFile; fileRef = B6FEA44F0444C3370013916D /* tc2068.c */; };
 		B61F466509121DF100C8096C /* dck.c in Sources */ = {isa = PBXBuildFile; fileRef = B65E4C600445DB7D00A864FD /* dck.c */; };
 		B61F466709121DF100C8096C /* psg.c in Sources */ = {isa = PBXBuildFile; fileRef = B6CA304C049CEC410037E9F2 /* psg.c */; };
@@ -533,6 +534,7 @@
 		B639B7670A6BAFCF00927E24 /* csw.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = csw.icns; sourceTree = "<group>"; };
 		B639B7D00A6BB45600927E24 /* raw.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = raw.icns; sourceTree = "<group>"; };
 		B63ABD8D042F175200A864FD /* scaler.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = scaler.c; path = ../ui/scaler/scaler.c; sourceTree = SOURCE_ROOT; };
+		FEC51079347A105100000001 /* snes_ntsc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = snes_ntsc.c; path = ../ui/scaler/snes_ntsc.c; sourceTree = SOURCE_ROOT; };
 		B63F9949077182B4004D6DFA /* RollbackController.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = RollbackController.h; path = controllers/RollbackController.h; sourceTree = SOURCE_ROOT; };
 		B63F994A077182B4004D6DFA /* RollbackController.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = RollbackController.m; path = controllers/RollbackController.m; sourceTree = SOURCE_ROOT; };
 		B6403FD60A7E4B1A00E00B11 /* loader.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = loader.c; sourceTree = "<group>"; };
@@ -1711,6 +1713,7 @@
 				F541FB5E03B0B33401FF8235 /* scaler.h */,
 				B60A6A3A042BEECE00D41533 /* scaler_internals.h */,
 				B63ABD8D042F175200A864FD /* scaler.c */,
+				FEC51079347A105100000001 /* snes_ntsc.c */,
 				B62B19E00DD31DF500D42AAF /* scalers16.c */,
 			);
 			path = scaler;
@@ -2188,6 +2191,7 @@
 				B61F466009121DF100C8096C /* DebuggerController.m in Sources */,
 				B61F466209121DF100C8096C /* FuseMenus.m in Sources */,
 				B61F466309121DF100C8096C /* scaler.c in Sources */,
+				FEC5107A347A105100000001 /* snes_ntsc.c in Sources */,
 				B61F466409121DF100C8096C /* tc2068.c in Sources */,
 				B61F466509121DF100C8096C /* dck.c in Sources */,
 				B61F466709121DF100C8096C /* psg.c in Sources */,
@@ -2449,7 +2453,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.8.0-fusex-0.7";
+				MARKETING_VERSION = "1.9.1-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (
@@ -2521,7 +2525,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.8.0-fusex-0.7";
+				MARKETING_VERSION = "1.9.1-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (
@@ -2592,7 +2596,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.8.0-fusex-0.7";
+				MARKETING_VERSION = "1.9.1-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (

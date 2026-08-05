@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 ## Copyright (c) 2011 Philip Kendall
 ## Copyright (c) 2013-2015 Sergio Baldoví
+## Copyright (c) 2026 Alberto Garcia
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -75,11 +76,18 @@ data/fuse.xml: $(srcdir)/data/fuse.xml.in
 	fi; \
 	$(SED) -e "$$mime_zlib" -e "$$mime_bz2" < $(srcdir)/data/fuse.xml.in > $@
 
+if UI_GTK
+EXTRA_DESKTOP_CATEGORIES = GTK;
+endif
+
 # Generate net.sourceforge.fuse_emulator.Fuse.desktop from fuse.xml to keep mime types list in sync
 data/net.sourceforge.fuse_emulator.Fuse.desktop: $(srcdir)/data/net.sourceforge.fuse_emulator.Fuse.desktop.in data/fuse.xml
 	$(AM_V_GEN)$(MKDIR_P) data; \
 	list=`$(SED) -e '/<mime-type/ s/.*<mime-type type="\(.*\)">.*/\1;/' -e t -e d < data/fuse.xml | tr -d '\n'` && \
-	$(SED) -e "s|@MIME_TYPES@|$$list|" < $(srcdir)/data/net.sourceforge.fuse_emulator.Fuse.desktop.in > $@
+	$(SED) -e "s|@MIME_TYPES@|$$list|" \
+	       -e 's|@FUSE_BIN_EXTENSION@|$(EXEEXT)|' \
+	       -e 's|@EXTRA_DESKTOP_CATEGORIES@|$(EXTRA_DESKTOP_CATEGORIES)|' \
+		< $(srcdir)/data/net.sourceforge.fuse_emulator.Fuse.desktop.in > $@
 
 update-database-cache:
 	if test -z "$(DESTDIR)"; then \
@@ -115,6 +123,9 @@ EXTRA_DIST += \
               data/net.sourceforge.fuse_emulator.Fuse.metainfo.xml \
               data/fuse.xml.in \
               data/shell-completion/diff_options.sh \
+              data/win32/LICENSES.txt \
+              data/win32/README-win32.txt \
+              data/win32/check_win32_dll_deps.sh \
               data/win32/fuse.manifest.in \
               data/win32/installer.nsi.in \
               data/win32/winfuse.ico \

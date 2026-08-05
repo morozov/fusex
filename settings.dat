@@ -1,4 +1,5 @@
 # settings.dat: configuration options for Fuse
+# Copyright (c) 2026 Fredrick Meunier
 # Copyright (c) 2002-2018 Philip Kendall, Alistair Cree
 
 # This program is free software; you can redistribute it and/or modify
@@ -66,7 +67,7 @@ multiface3, boolean, 0
 multiface1_stealth, boolean, 0
 snapsasz80, null, 0
 opus, boolean, 0
-pal_tv2x, boolean, 0
+pal_tv2x, null, 0
 movie_compr, string, NULL
 movie_start, string, NULL
 movie_stop_after_rzx, boolean, 1
@@ -110,7 +111,6 @@ volume_uspeech, numeric, 100
 joy_prompt, boolean, 1,,, joyprompt
 joy_kempston, boolean, 0,,, kempston
 joy_keyboard, boolean, 0,,, keyboard
-joystick_1, string, NULL,, 'j'
 joystick_1_output, numeric, 0
 joystick_2_output, numeric, 0
 joystick_keyboard_output, numeric, 0
@@ -129,7 +129,6 @@ joystick_1_fire_12, numeric, 4096
 joystick_1_fire_13, numeric, 4096
 joystick_1_fire_14, numeric, 4096
 joystick_1_fire_15, numeric, 4096
-joystick_2, string, NULL
 joy1_xaxis, numeric, 0,,, joy1x
 joystick_2_fire_1, numeric, 4096
 joystick_2_fire_2, numeric, 4096
@@ -212,12 +211,22 @@ printer_graphics_filename, string, "printout.pbm",,, graphicsfile
 printer_text_filename, string, "printout.txt",,, textfile
 
 aspect_hint, boolean, 1
-strict_aspect_hint, boolean, 0
 fb_mode, numeric, 320,, 'v', fbmode
 svga_modes, string, NULL
 sdl_fullscreen_mode, string, NULL
 doublescan_mode, numeric, 1,, 'D', doublescan-mode
 
+
+composite_filter_hue, numeric, 0
+composite_filter_saturation, numeric, -27
+composite_filter_contrast, numeric, 21
+composite_filter_brightness, numeric, 10
+composite_filter_sharpness, numeric, -10
+composite_filter_gamma, numeric, 0
+composite_filter_resolution, numeric, -16
+composite_filter_artifacts, numeric, -59
+composite_filter_fringing, numeric, 14
+composite_filter_bleed, numeric, -71
 start_scaler_mode, string, "2x",, 'g', graphics-filter
 
 speccyboot_tap, string, "tap0",

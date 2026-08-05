@@ -1,5 +1,6 @@
 /* debugger_internals.h: The internals of Fuse's monitor/debugger
    Copyright (c) 2002-2016 Philip Kendall
+   Copyright (c) 2026 Fredrick Meunier
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -72,8 +73,10 @@ typedef enum debugger_token {
   DEBUGGER_TOKEN_LESS_THAN_OR_EQUAL_TO = 0x2264,
   DEBUGGER_TOKEN_GREATER_THAN_OR_EQUAL_TO = 0x2265,
 
-  /* No real significance to this value */
+  /* No real significance to these values */
   DEBUGGER_TOKEN_DEREFERENCE = 0x1000,
+  DEBUGGER_TOKEN_LEFT_SHIFT = 0x1001,
+  DEBUGGER_TOKEN_RIGHT_SHIFT = 0x1002,
 
 } debugger_token;
 
@@ -92,11 +95,11 @@ debugger_expression_new_system_variable( const char *type, const char *detail,
 debugger_expression*
 debugger_expression_new_variable( const char *name, int pool );
 
-debugger_expression* debugger_expression_copy( debugger_expression *src );
+debugger_expression* debugger_expression_copy( const debugger_expression *src );
 void debugger_expression_delete( debugger_expression* expression );
 
 libspectrum_dword
-debugger_expression_evaluate( debugger_expression* expression );
+debugger_expression_evaluate( const debugger_expression* expression );
 
 /* Event handling */
 
