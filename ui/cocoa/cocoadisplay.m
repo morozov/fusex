@@ -103,7 +103,6 @@ init_scalers( void )
   scaler_register_clear();
 
   scaler_register( SCALER_NORMAL );
-  scaler_register( SCALER_PALTV );
   if( machine_current->timex ) {
     scaler_register( SCALER_TIMEXTV );
   } else {
@@ -122,6 +121,9 @@ init_scalers( void )
     scaler_register( SCALER_HQ2X );
     scaler_register( SCALER_HQ3X );
     scaler_register( SCALER_HQ4X );
+    scaler_register( SCALER_NTSC2X );
+    scaler_register( SCALER_NTSC3X );
+    scaler_register( SCALER_NTSC4X );
   }
   
   if( scaler_is_supported( current_scaler ) ) {

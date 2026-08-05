@@ -1,5 +1,6 @@
 /* display.h: Routines for printing the Spectrum's screen
    Copyright (c) 1999-2016 Philip Kendall
+   Copyright (c) 2026 Fredrick Meunier
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,6 +63,19 @@
 
 /* The aspect ratio corrected display width */
 #define DISPLAY_ASPECT_WIDTH  ( DISPLAY_SCREEN_WIDTH / 2 )
+
+/* The Spectrum's FLASH attribute toggles every 16 frames.  One complete
+   flash cycle (normal → reversed → normal) spans 32 frames. */
+#define DISPLAY_FLASH_HALF_PERIOD 16
+#define DISPLAY_FLASH_PERIOD      32
+
+/* Byte sizes of the ZX Spectrum display file areas.
+   The pixel data area holds 192 rows × 32 bytes = 6144 bytes (0x1800).
+   The attribute area holds 24 rows × 32 bytes = 768 bytes (0x300).
+   The combined display file is 6912 bytes (0x1b00). */
+#define DISPLAY_PIXEL_BYTES ( DISPLAY_HEIGHT * DISPLAY_WIDTH_COLS )
+#define DISPLAY_ATTR_BYTES  ( DISPLAY_HEIGHT_ROWS * DISPLAY_WIDTH_COLS )
+#define DISPLAY_FILE_SIZE   ( DISPLAY_PIXEL_BYTES + DISPLAY_ATTR_BYTES )
 
 extern int display_ui_initialised;
 

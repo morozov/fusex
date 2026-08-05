@@ -2047,11 +2047,11 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="PAL TV" imagePosition="left" alignment="left" tag="18" inset="2" id="1722">
+                            <buttonCell type="radio" title="PAL TV 2x" imagePosition="left" alignment="left" tag="18" inset="2" id="1722">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
-                            <buttonCell type="radio" title="PAL TV 2x" imagePosition="left" alignment="left" tag="19" inset="2" id="1724">
+                            <buttonCell type="radio" title="PAL TV 3x" imagePosition="left" alignment="left" tag="19" inset="2" id="1724">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>
@@ -2062,7 +2062,7 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="PAL TV 3x" imagePosition="left" alignment="left" tag="20" inset="2" id="1723">
+                            <buttonCell type="radio" title="PAL TV 4x" imagePosition="left" alignment="left" tag="20" inset="2" id="1723">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>
@@ -2073,7 +2073,7 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="PAL TV 4x" imagePosition="left" alignment="left" tag="21" inset="2" id="74h-R3-Dsl">
+                            <buttonCell type="radio" title="HQ 2x" imagePosition="left" alignment="left" tag="21" inset="2" id="74h-R3-Dsl">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>
@@ -2084,7 +2084,7 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="HQ 2x" imagePosition="left" alignment="left" tag="22" inset="2" id="1729">
+                            <buttonCell type="radio" title="HQ 3x" imagePosition="left" alignment="left" tag="22" inset="2" id="1729">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>
@@ -2095,7 +2095,7 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="HQ 3x" imagePosition="left" alignment="left" tag="23" inset="2" id="1727">
+                            <buttonCell type="radio" title="HQ 4x" imagePosition="left" alignment="left" tag="23" inset="2" id="1727">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>
@@ -2106,7 +2106,7 @@
                                     </binding>
                                 </connections>
                             </buttonCell>
-                            <buttonCell type="radio" title="HQ 4x" imagePosition="left" alignment="left" tag="24" inset="2" id="tRv-o9-mGu">
+                            <buttonCell type="radio" title="NTSC TV 2x" imagePosition="left" alignment="left" tag="24" inset="2" id="tRv-o9-mGu">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                                 <connections>

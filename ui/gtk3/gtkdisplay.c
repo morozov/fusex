@@ -1,5 +1,7 @@
 /* gtkdisplay.c: GTK routines for dealing with the Speccy screen
    Copyright (c) 2000-2018 Philip Kendall
+   Copyright (c) 2026 Alberto Garcia
+   Copyright (c) 2026 Fredrick Meunier
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +25,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,10 +49,6 @@
    DISPLAY_SCREEN_HEIGHT ie a Timex screen is size 2) we will be
    creating via the scalers */
 #define MAX_SCALE 4
-
-/* The size of a 1x1 image in units of
-   DISPLAY_ASPECT WIDTH x DISPLAY_SCREEN_HEIGHT */
-int image_scale;
 
 /* The height and width of a 1x1 image in pixels */
 int image_width, image_height;
@@ -103,20 +102,32 @@ typedef enum {
   FORMAT_x8b8g8r8     /* GdkRGB */
 } colour_format_t;
 
-static int display_updated = 0;
-
 static cairo_surface_t *surface = NULL;
 
-/* The current size of the window (in units of DISPLAY_SCREEN_*) */
-static int gtkdisplay_current_size=1;
+/* The scaler the current cairo surface was created for */
+static scaler_type surface_scaler = SCALER_NUM;
+
+/* The size the window has been resized to (in units of DISPLAY_SCREEN_*),
+   used to choose the scaler. The cairo surface is sized to the active
+   scaler instead, which may be smaller or larger than this when the
+   scaler's family has no variant for this size (see scaler_family_table). */
+static int gtkdisplay_surface_size=1;
 
 /* Extra height used for menu and status bars */
 static int extra_height = 0;
+
+/* If the user resizes the window, switch the scaler only after this
+   period of inactivity (i.e. without configure events). */
+#define RESIZE_TIMEOUT_MS 250
+static guint resize_timeout_id = 0;
+static gint64 resize_last_activity = 0;
+static int pending_width, pending_height;
 
 static int init_colours( colour_format_t format );
 static void gtkdisplay_area(int x, int y, int width, int height);
 static void register_scalers( int force_scaler );
 static void gtkdisplay_load_gfx_mode( void );
+static void cancel_pending_resize( void );
 
 /* Callbacks */
 
@@ -193,6 +204,8 @@ uidisplay_init( int width, int height )
                     G_CALLBACK( drawing_area_resize_callback ), NULL );
 
   error = init_colours( colour_format ); if( error ) return error;
+  error = scaler_select_bitformat( BITFORMAT_X8R8G8B8 );
+  if( error ) return error;
 
   black = settings_current.bw_tv ? bw_colours[0] : gtkdisplay_colours[0];
 
@@ -201,7 +214,6 @@ uidisplay_init( int width, int height )
       *(libspectrum_dword*)( rgb_image + y * rgb_pitch + 4 * x ) = black;
 
   image_width = width; image_height = height;
-  image_scale = width / DISPLAY_ASPECT_WIDTH;
 
   register_scalers( 0 );
 
@@ -224,8 +236,8 @@ uidisplay_init( int width, int height )
 static void
 ensure_appropriate_surface( void )
 {
-  /* Create a bigger surface for the new display size */
-  float scale = (float)gtkdisplay_current_size / image_scale;
+  /* Recreate the cairo surface to match the active scaler */
+  float scale = scaler_get_scaling_factor( current_scaler );
   if( surface ) cairo_surface_destroy( surface );
 
   surface =
@@ -234,6 +246,8 @@ ensure_appropriate_surface( void )
                                            scale * image_width,
                                            scale * image_height,
                                            scaled_pitch );
+
+  surface_scaler = current_scaler;
 }
 
 static int
@@ -245,10 +259,14 @@ drawing_area_resize( int width, int height, int force_scaler )
   if( size > height / DISPLAY_SCREEN_HEIGHT )
     size = height / DISPLAY_SCREEN_HEIGHT;
 
-  /* If we're the same size as before, no need to do anything else */
-  if( size == gtkdisplay_current_size ) return 0;
+  if( size > MAX_SCALE ) size = MAX_SCALE;
+  if( size < 1 ) size = 1;
 
-  gtkdisplay_current_size = size;
+  /* If we're the same size and scaler as before, no need to do anything else */
+  if( size == gtkdisplay_surface_size && current_scaler == surface_scaler )
+    return 0;
+
+  gtkdisplay_surface_size = size;
 
   register_scalers( force_scaler );
 
@@ -265,7 +283,6 @@ static void
 register_scalers( int force_scaler )
 {
   scaler_type scaler;
-  float drawing_area_scale, scaling_factor;
 
   scaler_register_clear();
 
@@ -294,52 +311,39 @@ register_scalers( int force_scaler )
     scaler_register( SCALER_SUPER2XSAI );
     scaler_register( SCALER_SUPEREAGLE );
     scaler_register( SCALER_DOTMATRIX );
+    scaler_register( SCALER_NTSC2X );
+    scaler_register( SCALER_NTSC3X );
+    scaler_register( SCALER_NTSC4X );
   }
   scaler_register( SCALER_NORMAL );
-  scaler_register( SCALER_PALTV );
 
   scaler =
     scaler_is_supported( current_scaler ) ? current_scaler : SCALER_NORMAL;
 
-  drawing_area_scale = (float)gtkdisplay_current_size / image_scale;
-  scaling_factor = scaler_get_scaling_factor( current_scaler );
+  /* When the window is resized switch to the scaler of the same family
+     (e.g. PAL TV, HQ) that fits the new size */
+  if( force_scaler )
+    scaler = scaler_for_size( scaler, gtkdisplay_surface_size );
 
-  /* Override scaler if the image doesn't fit well in the drawing area */
-  if( force_scaler && drawing_area_scale != scaling_factor ) {
-
-    switch( gtkdisplay_current_size ) {
-    case 1: scaler = machine_current->timex ? SCALER_HALF : SCALER_NORMAL;
-      break;
-    case 2: scaler = machine_current->timex ? SCALER_NORMAL : SCALER_DOUBLESIZE;
-      break;
-    case 3: scaler = machine_current->timex ? SCALER_TIMEX1_5X :
-                                              SCALER_TRIPLESIZE;
-      break;
-    case 4: scaler = machine_current->timex ? SCALER_TIMEX2X :
-                                              SCALER_QUADSIZE;
-      break;
-    }
-  }
-
-  scaler_select_scaler( scaler );
+  /* Activate the scaler without trying to resize the GTK window */
+  scaler_activate_scaler( scaler );
 }
 
 void
 uidisplay_frame_end( void )
 {
-  if( display_updated ) {
-    gdk_window_process_updates( gtk_widget_get_window( gtkui_drawing_area ),
-                                FALSE );
-    display_updated = 0;
+  if( scaler_flags & SCALER_FLAGS_FULL_REFRESH ) {
+    uidisplay_area( 0, 0, image_width, image_height );
   }
 
-  return;
+  /* If the user changed the full screen option, apply it now */
+  gtkui_fullscreen_apply();
 }
 
 void
 uidisplay_area( int x, int y, int w, int h )
 {
-  float scale = (float)gtkdisplay_current_size / image_scale;
+  float scale = scaler_get_scaling_factor( current_scaler );
   int scaled_x, scaled_y, i, yy;
   libspectrum_dword *palette;
 
@@ -377,16 +381,58 @@ uidisplay_area( int x, int y, int w, int h )
   gtkdisplay_area( scaled_x, scaled_y, w, h );
 }
 
+/* Map the cairo surface onto the drawing area.
+   'scale' is set so the contents fit the drawing area.
+   'offset_x' and 'offset_y' are set so the contents are centred. */
+static void
+get_surface_placement( double *scale, int *offset_x, int *offset_y )
+{
+  int surface_width, surface_height, avail_width, avail_height, origin_y;
+  double scale_x, scale_y, s;
+  GtkAllocation alloc;
+
+  surface_width = cairo_image_surface_get_width( surface );
+  surface_height = cairo_image_surface_get_height( surface );
+
+  /* By default fit the image into the drawing area */
+  gtk_widget_get_allocation( gtkui_drawing_area, &alloc );
+  avail_width = alloc.width;
+  avail_height = alloc.height;
+  origin_y = 0;
+
+  /* In fullscreen fit the image into the whole window instead.
+     If the menu and status bars are hidden then we see the whole content.
+     If they are visible then those bars cover the edges of the image. */
+  if( settings_current.full_screen ) {
+    avail_height = gtk_widget_get_allocated_height( gtkui_window );
+    origin_y = -alloc.y;
+  }
+
+  scale_x = (double)avail_width  / surface_width;
+  scale_y = (double)avail_height / surface_height;
+  s = scale_x < scale_y ? scale_x : scale_y;
+
+  *offset_x =            ( avail_width  - (int)( surface_width  * s ) ) / 2;
+  *offset_y = origin_y + ( avail_height - (int)( surface_height * s ) ) / 2;
+  *scale = s;
+}
+
 static void gtkdisplay_area(int x, int y, int width, int height)
 {
   int max_width, max_height;
-
-  display_updated = 1;
+  int offset_x, offset_y;
+  int wx, wy, ww, wh;
+  double scale;
 
   if( width <= 0 || height <= 0 ) return;
 
-  max_width = surface ? cairo_image_surface_get_width( surface ) : width;
-  max_height = surface ? cairo_image_surface_get_height( surface ) : height;
+  if( !surface ) {
+    gtk_widget_queue_draw_area( gtkui_drawing_area, x, y, width, height );
+    return;
+  }
+
+  max_width = cairo_image_surface_get_width( surface );
+  max_height = cairo_image_surface_get_height( surface );
 
   /* Expand the invalidated area slightly to avoid thin seams on scaled GTK
      redraws where Cairo clips right on a dirty-rect edge. */
@@ -395,7 +441,16 @@ static void gtkdisplay_area(int x, int y, int width, int height)
   if( x + width < max_width ) width++;
   if( y + height < max_height ) height++;
 
-  gtk_widget_queue_draw_area( gtkui_drawing_area, x, y, width, height );
+  /* Map the surface onto the drawing area */
+  get_surface_placement( &scale, &offset_x, &offset_y );
+
+  /* Adjust the values according to the scale factor */
+  wx = (int)( x * scale ) + offset_x;
+  wy = (int)( y * scale ) + offset_y;
+  ww = (int)( ceil( ( x + width  ) * scale ) ) - (int)( x * scale );
+  wh = (int)( ceil( ( y + height ) * scale ) ) - (int)( y * scale );
+
+  gtk_widget_queue_draw_area( gtkui_drawing_area, wx, wy, ww, wh );
 }
 
 int
@@ -414,6 +469,8 @@ uidisplay_hotswap_gfx_mode( void )
 int
 uidisplay_end( void )
 {
+  cancel_pending_resize();
+
   return 0;
 }
 
@@ -507,27 +564,85 @@ uidisplay_plot16( int x, int y, libspectrum_word data,
 
 /* Called by gtkui_drawing_area on "draw" event */
 static gboolean
-gtkdisplay_draw( GtkWidget *widget, cairo_t *cr, gpointer user_data )
+gtkdisplay_draw( GtkWidget *widget GCC_UNUSED, cairo_t *cr,
+                 gpointer user_data )
 {
+  int offset_x, offset_y;
+  double scale;
+
   /* Create a new surface for this gfx mode */
   if( !surface ) ensure_appropriate_surface();
 
-  /* Repaint the drawing area */
-  cairo_set_source_surface( cr, surface, 0, 0 );
-  cairo_set_operator( cr, CAIRO_OPERATOR_SOURCE );
+  /* Map the surface onto the drawing area */
+  get_surface_placement( &scale, &offset_x, &offset_y );
+
+  /* Fill the drawing area with black. This clears the margins around
+     the source if the drawing area is larger */
+  cairo_set_source_rgb( cr, 0, 0, 0 );
   cairo_paint( cr );
+
+  /* Repaint the surface on top */
+  cairo_translate( cr, offset_x, offset_y );
+  cairo_scale( cr, scale, scale );
+  cairo_set_source_surface( cr, surface, 0, 0 );
+
+  /* Paint the image over its own area and not the whole drawing area.
+     Otherwise it can bleed into the surrounding margins when the
+     scaling factor is not an integer, leaving a stale thin border. */
+  cairo_rectangle( cr, 0, 0,
+                   cairo_image_surface_get_width( surface ),
+                   cairo_image_surface_get_height( surface ) );
+  cairo_fill( cr );
 
   return FALSE;
 }
 
+static void
+cancel_pending_resize( void )
+{
+  if( resize_timeout_id ) {
+    g_source_remove( resize_timeout_id );
+    resize_timeout_id = 0;
+  }
+}
+
+/* Resize the drawing area when the user has finished resizing the window */
+static gboolean
+drawing_area_resize_timeout( gpointer data GCC_UNUSED )
+{
+  gint64 timeout = (gint64)RESIZE_TIMEOUT_MS * 1000;
+  gint64 idle = g_get_monotonic_time() - resize_last_activity;
+
+  /* Rearm the timer if more configure events arrived in the meantime */
+  if( idle < timeout ) {
+    resize_timeout_id = g_timeout_add( ( timeout - idle ) / 1000,
+                                       drawing_area_resize_timeout, NULL );
+    return G_SOURCE_REMOVE;
+  }
+
+  resize_timeout_id = 0;
+
+  drawing_area_resize( pending_width, pending_height, 1 );
+
+  return G_SOURCE_REMOVE;
+}
+
 /* Called by gtkui_window on "configure_event".
-   On GTK 3 the window determines the size of the drawing area */
+   On GTK 3 the window determines the size of the drawing area.
+
+   Wait for RESIZE_TIMEOUT_MS before changing the scaler to prevent
+   the window from flickering while it is being resized. */
 static gint
 drawing_area_resize_callback( GtkWidget *widget GCC_UNUSED, GdkEvent *event,
                               gpointer data GCC_UNUSED )
 {
-  drawing_area_resize( event->configure.width,
-                       event->configure.height - extra_height, 1 );
+  pending_width  = event->configure.width;
+  pending_height = event->configure.height - extra_height;
+  resize_last_activity = g_get_monotonic_time();
+
+  if( !resize_timeout_id )
+    resize_timeout_id =
+      g_timeout_add( RESIZE_TIMEOUT_MS, drawing_area_resize_timeout, NULL );
 
   return FALSE;
 }
@@ -538,14 +653,10 @@ gtkdisplay_update_geometry( void )
   GdkGeometry geometry;
   GdkWindowHints hints;
   GtkWidget *geometry_widget;
-  float scale;
 
   if( !scalers_registered ) return;
 
-  scale = scaler_get_scaling_factor( current_scaler );
-
-  hints = GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE |
-          GDK_HINT_BASE_SIZE | GDK_HINT_RESIZE_INC;
+  hints = GDK_HINT_MIN_SIZE;
 
   /* Since GTK 3.20 it is intended that gtk_window_set_geometry_hints
      don't set geometry of widgets. See [bugs:#344] */
@@ -559,37 +670,8 @@ gtkdisplay_update_geometry( void )
     extra_height += gtkstatusbar_get_height();
   }
 
-#ifdef GDK_WINDOWING_WAYLAND
-  /* We don't calculate the window size enough accurately on wayland
-     backend to force the window geometry (bug #367) */
-  GdkDisplay *display = gdk_display_get_default();
-
-  if( GDK_IS_WAYLAND_DISPLAY( display ) ) {
-    hints &= ~GDK_HINT_RESIZE_INC;
-  }
-#endif                /* #ifdef GDK_WINDOWING_WAYLAND */
-
   geometry.min_width = DISPLAY_ASPECT_WIDTH;
   geometry.min_height = DISPLAY_SCREEN_HEIGHT + extra_height;
-  geometry.max_width = MAX_SCALE * DISPLAY_ASPECT_WIDTH;
-  geometry.max_height = MAX_SCALE * DISPLAY_SCREEN_HEIGHT + extra_height;
-  geometry.base_width = scale * image_width;
-  geometry.base_height = scale * image_height + extra_height;
-  geometry.width_inc = DISPLAY_ASPECT_WIDTH;
-  geometry.height_inc = DISPLAY_SCREEN_HEIGHT;
-
-  if( settings_current.aspect_hint ) {
-    hints |= GDK_HINT_ASPECT;
-
-    geometry.min_aspect = geometry.max_aspect =
-      ( scale * DISPLAY_ASPECT_WIDTH ) /
-      ( scale * DISPLAY_SCREEN_HEIGHT + extra_height );
-
-    if( !settings_current.strict_aspect_hint ) {
-      geometry.min_aspect *= 0.9;
-      geometry.max_aspect *= 1.125;
-    }
-  }
 
   gtk_window_set_geometry_hints( GTK_WINDOW( gtkui_window ),
                                  geometry_widget,
@@ -605,9 +687,23 @@ gtkdisplay_load_gfx_mode( void )
 
   gtkdisplay_update_geometry();
 
+  /* This is a programmatic resize for a new scaler so apply it right away */
+  cancel_pending_resize();
+  drawing_area_resize( scale * image_width, scale * image_height, 0 );
+
   gtk_window_resize( GTK_WINDOW( gtkui_window ), scale * image_width,
                      scale * image_height + extra_height );
 
   /* Redraw the entire screen... */
   display_refresh_all();
+}
+
+/* The window's natural size for the current scaler */
+void
+gtkdisplay_get_window_size( int *width, int *height )
+{
+  float scale = scaler_get_scaling_factor( current_scaler );
+
+  *width = scale * image_width;
+  *height = scale * image_height + extra_height;
 }

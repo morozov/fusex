@@ -2,6 +2,7 @@
    Copyright (c) 2003-2015 Marek Januszewski, Philip Kendall, Stuart Brady
    Copyright (c) 2015 Kirben
    Copyright (c) 2016 lordhoto
+   Copyright (c) 2026 Fredrick Meunier
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -261,7 +262,7 @@ fuse_window_proc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
          another window */
       return TRUE;
 
-#if defined USE_JOYSTICK && !defined HAVE_JSW_H
+#ifdef USE_JOYSTICK
 
     case MM_JOY1BUTTONDOWN:
       win32joystick_buttonevent( 0, 1, wParam );
@@ -287,7 +288,7 @@ fuse_window_proc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
       win32joystick_move( 1, LOWORD( lParam ), HIWORD( lParam ) );
       break;
 
-#endif			/* if defined USE_JOYSTICK && !defined HAVE_JSW_H */
+#endif			/* #ifdef USE_JOYSTICK */
 
   }
   return( DefWindowProc( hWnd, msg, wParam, lParam ) );
