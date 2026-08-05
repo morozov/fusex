@@ -124,6 +124,7 @@ CODE
 print << 'CODE';
   /* show_help */ 0,
   /* show_version */ 0,
+  /* no_banner */ 0,
 };
 
 static int settings_command_line( settings_info *settings, int *first_arg,
@@ -392,6 +393,7 @@ print << 'CODE';
 
     { "help", 0, NULL, 'h' },
     { "version", 0, NULL, 'V' },
+    { "no-banner", 0, NULL, 444 },
 
     { 0, 0, 0, 0 }		/* End marker: DO NOT REMOVE */
   };
@@ -446,6 +448,7 @@ print << 'CODE';
 
     case 'h': settings->show_help = 1; break;
     case 'V': settings->show_version = 1; break;
+    case 444: settings->no_banner = 1; break;
 
     case ':':
     case '?':

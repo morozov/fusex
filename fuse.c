@@ -387,7 +387,7 @@ int fuse_init(int argc, char **argv)
 
   start_scaler = utils_safe_strdup( settings_current.start_scaler_mode );
 
-  fuse_show_copyright();
+  if( !settings_current.no_banner ) fuse_show_copyright();
 
   if( run_startup_manager( &argc, &argv ) ) return 1;
 
@@ -554,6 +554,7 @@ static void fuse_show_help( void )
    "Other options:\n\n"
    "--help                 This information.\n"
    "--machine <type>       Which machine should be emulated?\n"
+   "--no-banner            Suppress the startup copyright banner.\n"
    "--playback <filename>  Play back RZX file <filename>.\n"
    "--record <filename>    Record to RZX file <filename>.\n"
    "--separation <type>    Use ACB/ABC stereo for the AY-3-8912 sound chip.\n"

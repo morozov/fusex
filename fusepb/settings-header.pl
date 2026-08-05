@@ -98,6 +98,7 @@ print << 'CODE';
 
   int show_help;
   int show_version;
+  int no_banner;
 
 } settings_info;
 
