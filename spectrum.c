@@ -338,7 +338,7 @@ spectrum_do_frames_until_halt( int max_frames )
 
   gdbserver_note_emulating();
 
-  while( frames < max_frames ) {
+  while( max_frames < 0 || frames < max_frames ) {
 
     /* Resume the frame the previous call left part-way through rather than
        starting a new one: a halt returns from the middle of a frame, and the

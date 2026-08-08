@@ -296,6 +296,17 @@ int fusex_run_until_break( int max_frames )
   return spectrum_do_frames_until_halt( max_frames );
 }
 
+/* Run until a breakpoint traps, however long that takes.
+
+   The machine is deterministic, so a breakpoint the program reaches is reached
+   after the same number of frames every time and there is no budget worth
+   choosing. This does not return if the program never executes the address. */
+void fusex_run_to_break( void )
+{
+  if( debugger_mode == DEBUGGER_MODE_HALTED ) debugger_run();
+  spectrum_do_frames_until_halt( -1 );
+}
+
 /* Frames the machine has completed since its last reset. Lets a caller check
    what fusex_step() and fusex_run_until_break() actually advanced, rather than
    inferring it from something the running program did. */
