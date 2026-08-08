@@ -3,8 +3,9 @@
    The null build configures with --disable-sockets (so it needs neither
    Spectranet nor mbedTLS) and therefore excludes the socket compat layer and
    the Spectranet NIC engines. A few always-built units still reference those
-   symbols (utils.c the socket helpers, debugger/vfile.c the xfs engine); none
-   are exercised headless, so trivial stubs satisfy the linker.
+   symbols (utils.c the socket helpers, debugger/vfile.c the xfs engine, and
+   the gdbserver's xfs-debug monitor command); none are exercised headless, so
+   trivial stubs satisfy the linker.
 
    It also supplies main(): the fork renames fuse.c's entry point to old_main
    and expects the UI layer to provide main() (the Cocoa app does); the null UI
@@ -31,6 +32,12 @@ int  compat_socket_close( compat_socket_t fd ) { (void)fd; return 0; }
 /* Spectranet NIC xfs engine (excluded with sockets; referenced by debugger/vfile.c) */
 struct xfs_engine_t xfs_ram_engine;
 void xfs_reset( void ) {}
+
+/* The gdbserver's xfs-debug monitor command is built unconditionally and asks
+   the engine to log; with no engine here the setting has nothing to act on, so
+   it stays off and reports itself off. */
+void xfs_debug_enable( bool enable ) { (void)enable; }
+bool xfs_debug_is_enabled( void ) { return false; }
 
 /* Entry point: hand off to fuse.c's renamed main. */
 extern int old_main( int argc, char **argv );
