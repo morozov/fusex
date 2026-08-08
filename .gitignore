@@ -128,4 +128,5 @@ xcuserdata
 
 # Out-of-tree build and scratch dirs (not committed)
 /build-null/
+/build-libspectrum/
 /scratch/
