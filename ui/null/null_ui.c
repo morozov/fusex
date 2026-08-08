@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+#include "event.h"
 #include "keyboard.h"
 #include "ui/ui.h"
 
@@ -68,6 +69,19 @@ ui_confirm_joystick( libspectrum_joystick libspectrum_type, int inputs )
 int
 ui_debugger_activate( void )
 {
+  /* There is no debugger window to raise, and no nested event loop to hold the
+     machine in: a null-UI build is driven by an embedding process (see
+     ui/null/fusex_api.c), and that process is what examines or continues the
+     halted machine.
+
+     Schedule an event for the current tstate so that z80_do_opcodes() returns
+     once the instruction it is on finishes. Without this, the loop in
+     spectrum_do_frames_until_halt() would not look at debugger_mode again
+     until the next event came due, which is however many instructions away
+     that happens to be. debugger_exit_emulator() leaves the same loop the same
+     way. */
+  event_add( 0, event_type_null );
+
   /* No error */
   return 0;
 }

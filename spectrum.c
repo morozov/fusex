@@ -323,6 +323,41 @@ spectrum_do_frame(void)
   spectrum_do_frame_end();
 }
 
+/* Frames completed since the last reset - the debugger's frame_count variable */
+libspectrum_dword
+spectrum_frame_count( void )
+{
+  return frames_since_reset;
+}
+
+/* Run frames until the debugger halts, or the frame budget runs out */
+int
+spectrum_do_frames_until_halt( int max_frames )
+{
+  int frames = 0;
+
+  gdbserver_note_emulating();
+
+  while( frames < max_frames ) {
+
+    /* Resume the frame the previous call left part-way through rather than
+       starting a new one: a halt returns from the middle of a frame, and the
+       caller expects to continue from the instruction it stopped on. */
+    if( event_frame_end ) {
+      spectrum_do_frame_end();
+      frames++;
+      continue;
+    }
+
+    z80_do_opcodes();
+    event_do_events();
+
+    if( debugger_mode == DEBUGGER_MODE_HALTED ) return 1;
+  }
+
+  return 0;
+}
+
 /* Run until target_tstates */
 void
 spectrum_do_timer( libspectrum_dword target_tstates )
