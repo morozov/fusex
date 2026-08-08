@@ -85,6 +85,16 @@ int spectrum_frame( void );
 /* Do a single frame */
 void spectrum_do_frame(void);
 
+/* Frames completed since the last reset */
+libspectrum_dword spectrum_frame_count( void );
+
+/* Run at most max_frames frames, returning as soon as the debugger halts.
+   Returns 1 if it stopped on a halt, 0 if it ran the frames out. How promptly
+   a halt is noticed is the UI's business: the loop only sees it once
+   z80_do_opcodes() has returned, and ui_debugger_activate() is what makes that
+   happen at the trapping instruction rather than at the next event. */
+int spectrum_do_frames_until_halt( int max_frames );
+
 /* Run until the next timer event */
 void spectrum_do_timer( libspectrum_dword target_tstates );
 
