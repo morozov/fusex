@@ -35,6 +35,16 @@ all-local: @FUSEX_LIB@
 
 CLEANFILES += @FUSEX_LIB@
 
+# The library is linked by hand rather than declared as an automake target, so
+# it has no install rule of its own. A host process loads it by path, so it is
+# installed under $(libdir) like any other shared library the build produces.
+install-exec-local: @FUSEX_LIB@
+	$(MKDIR_P) $(DESTDIR)$(libdir)
+	$(INSTALL_PROGRAM) @FUSEX_LIB@ $(DESTDIR)$(libdir)/@FUSEX_LIB@
+
+uninstall-local:
+	rm -f $(DESTDIR)$(libdir)/@FUSEX_LIB@
+
 endif
 
 CLEANFILES += $(ui_null_built)
