@@ -6,6 +6,7 @@
 #include <string.h>
 #include <libspectrum.h>
 #include "debugger/debugger.h"
+#include "machine.h"
 #include "memory_pages.h"
 #include "settings.h"
 #include "spectrum.h"
@@ -313,6 +314,33 @@ void fusex_run_to_break( void )
 int fusex_frame_count( void )
 {
   return (int)spectrum_frame_count();
+}
+
+/* Where the machine is INSIDE the current frame, in t-states, and how many
+   t-states the frame holds.
+
+   fusex_frame_count() counts whole frames, which orders two events only when
+   they fall in different ones. A caller relating something it read to
+   something the running program did needs finer than that: the game's own
+   loop is paced by its execution rather than by the frame, so a frame holds a
+   varying number of the program's steps and the events interleave inside it.
+
+   The pair places a read and a trapped program event on ONE timeline, which is
+   what makes their order and separation computable rather than assumed. It
+   exposes no new view of the machine -- t-states are the clock every other
+   entry point here already runs on -- and adds nothing to what a program or a
+   player can see.
+
+   tstates_per_frame comes from the current machine, so a caller need not
+   hardcode a model's timing to normalise the pair. */
+libspectrum_dword fusex_tstates( void )
+{
+  return tstates;
+}
+
+libspectrum_dword fusex_tstates_per_frame( void )
+{
+  return machine_current->timings.tstates_per_frame;
 }
 
 /* Resume a machine stopped at a breakpoint, without running it.
