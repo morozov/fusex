@@ -920,6 +920,73 @@ if test "x$missing_routines" = x; then
 fi
 AC_MSG_RESULT($missing_routines)
 
+FUSEX_LIB=
+FUSEX_LDFLAGS=
+LIBSPECTRUM_ARCHIVE=
+LIBSPECTRUM_PRIVATE_LIBS=
+
+AS_IF([test "$UI" = null], [
+
+AC_MSG_CHECKING(how to link the libfusex shared library)
+case "$host_os" in
+  darwin*)
+    FUSEX_LIB=libfusex.dylib
+    FUSEX_LDFLAGS='-dynamiclib -install_name @rpath/libfusex.dylib'
+    ;;
+  linux*|*bsd*)
+    dnl An ELF linker allows undefined symbols in a shared object, so without
+    dnl --no-undefined they surface at the host's dlopen. ld64 errors anyway.
+    FUSEX_LIB=libfusex.so
+    FUSEX_LDFLAGS='-shared -Wl,-soname,libfusex.so -Wl,--no-undefined'
+    CFLAGS="$CFLAGS -fPIC"
+    ;;
+  *)
+    AC_MSG_RESULT(unknown)
+    AC_MSG_ERROR([libfusex has not been built for $host_os])
+    ;;
+esac
+AC_MSG_RESULT($FUSEX_LIB)
+
+dnl A shared libspectrum records the path it was installed at, which a host
+dnl loading libfusex from elsewhere cannot resolve. -lspectrum leaves the
+dnl choice to the linker's search order, and the shared library wins wherever
+dnl both exist, so name the archive.
+AC_MSG_CHECKING(for the libspectrum archive)
+LIBSPECTRUM_ARCHIVE=`$PKG_CONFIG --variable=libdir libspectrum 2>/dev/null`/libspectrum.a
+if test -f "$LIBSPECTRUM_ARCHIVE"; then
+  AC_MSG_RESULT($LIBSPECTRUM_ARCHIVE)
+else
+  LIBSPECTRUM_ARCHIVE=-lspectrum
+  AC_MSG_RESULT([not found, linking libspectrum dynamically])
+  AC_MSG_WARN([libfusex will depend on a shared libspectrum at the path it was
+               built against; build libspectrum with --disable-shared
+               --with-pic for a relocatable library])
+fi
+
+dnl What the archive itself leaves unresolved, from the .pc file's Libs.private.
+AC_MSG_CHECKING(for libspectrum's private link flags)
+LIBSPECTRUM_PRIVATE_LIBS=`$PKG_CONFIG --static --libs libspectrum 2>/dev/null`
+LIBSPECTRUM_PRIVATE_LIBS=`echo " $LIBSPECTRUM_PRIVATE_LIBS " | sed 's/ -lspectrum / /g'`
+AC_MSG_RESULT($LIBSPECTRUM_PRIVATE_LIBS)
+
+dnl Libs.private omits libbz2, and fuse does not link bzip2 itself, so a
+dnl libspectrum built with bzip2 leaves BZ2_* unresolved. Ask the archive.
+AC_MSG_CHECKING(whether the libspectrum archive needs libbz2)
+if test -f "$LIBSPECTRUM_ARCHIVE" &&
+   $NM -u "$LIBSPECTRUM_ARCHIVE" 2>/dev/null | grep BZ2_ >/dev/null 2>&1; then
+  LIBSPECTRUM_PRIVATE_LIBS="$LIBSPECTRUM_PRIVATE_LIBS -lbz2"
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
+])
+
+AC_SUBST(FUSEX_LIB)
+AC_SUBST(FUSEX_LDFLAGS)
+AC_SUBST(LIBSPECTRUM_ARCHIVE)
+AC_SUBST(LIBSPECTRUM_PRIVATE_LIBS)
+
 dnl Work out which compatibility routines to use
 AC_MSG_CHECKING(which compatibility routines to use)
 case "$host_os" in

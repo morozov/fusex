@@ -1,4 +1,4 @@
-name: Null UI
+name: libfusex
 
 on:
   pull_request:
@@ -6,15 +6,17 @@ on:
     branches: [main]
 
 jobs:
-  null-ui-build:
-    name: Null UI (${{ matrix.os }})
+  libfusex:
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-26
+        include:
+          - os: ubuntu-latest
+            libfusex: libfusex.so
+          - os: macos-26
+            libfusex: libfusex.dylib
     env:
       LIBSPECTRUM_DIR: 3rdparty/libspectrum
 
@@ -48,14 +50,16 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ env.LIBSPECTRUM_DIR }}/libspectrum-installed
-          key: libspectrum-${{ matrix.os }}-${{ steps.libspectrum-sha.outputs.sha }}-fakeglib
+          key: libspectrum-${{ matrix.os }}-${{ steps.libspectrum-sha.outputs.sha }}-fakeglib-static-pic
 
       - name: Build libspectrum
         if: steps.libspectrum-cache.outputs.cache-hit != 'true'
         working-directory: ${{ env.LIBSPECTRUM_DIR }}
         run: |
           ./autogen.sh
-          ./configure --without-libgcrypt --without-bzip2 --with-fake-glib --prefix="$GITHUB_WORKSPACE/$LIBSPECTRUM_DIR/libspectrum-installed"
+          ./configure --without-libgcrypt --without-bzip2 --with-fake-glib \
+            --disable-shared --with-pic \
+            --prefix="$GITHUB_WORKSPACE/$LIBSPECTRUM_DIR/libspectrum-installed"
           make
           make install
 
@@ -64,7 +68,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: ${{ env.LIBSPECTRUM_DIR }}/libspectrum-installed
-          key: libspectrum-${{ matrix.os }}-${{ steps.libspectrum-sha.outputs.sha }}-fakeglib
+          key: libspectrum-${{ matrix.os }}-${{ steps.libspectrum-sha.outputs.sha }}-fakeglib-static-pic
 
       - name: Autogen
         run: ./autogen.sh
@@ -79,3 +83,6 @@ jobs:
 
       - name: Run the test suite
         run: make check
+
+      - name: Test libfusex
+        run: python3 .github/scripts/libfusex_boot_test.py ${{ matrix.libfusex }} roms

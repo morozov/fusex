@@ -25,6 +25,16 @@ fuse_SOURCES += $(ui_null_files)
 
 BUILT_SOURCES += $(ui_null_built)
 
+all-local: @FUSEX_LIB@
+
+@FUSEX_LIB@: fuse$(EXEEXT)
+	$(AM_V_GEN)objects=`echo " $(fuse_OBJECTS) " | sed 's| main\.$(OBJEXT) | |g'`; \
+	libraries=`echo " $(fuse_LDADD) " | sed 's| -lspectrum | |g'`; \
+	$(CCLD) @FUSEX_LDFLAGS@ $(LDFLAGS) -o $@ $$objects $$libraries \
+	  @LIBSPECTRUM_ARCHIVE@ @LIBSPECTRUM_PRIVATE_LIBS@ $(LIBS)
+
+CLEANFILES += @FUSEX_LIB@
+
 endif
 
 CLEANFILES += $(ui_null_built)
