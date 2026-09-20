@@ -393,7 +393,7 @@ create_dialog( void )
 
   error = gtkui_get_monospaced_font( &font ); if( error ) return error;
 
-  dialog = gtkstock_dialog_new( "Fuse - Debugger",
+  dialog = gtkstock_dialog_new( "FuseX - Debugger",
 				G_CALLBACK( delete_dialog ) );
   content_area = gtk_dialog_get_content_area( GTK_DIALOG( dialog ) );
 

@@ -167,7 +167,7 @@ MENU_CALLBACK( menu_file_loadbinarydata )
    */
   if( !load_info.filename || !compat_file_exists( load_info.filename ) )
   {
-    load_info.filename = ui_get_open_filename( "Fuse - Load Binary Data" );
+    load_info.filename = ui_get_open_filename( "FuseX - Load Binary Data" );
     if( !load_info.filename )
     {
       fuse_emulation_unpause();
@@ -186,7 +186,7 @@ MENU_CALLBACK( menu_file_loadbinarydata )
   load_info.activate_data = G_CALLBACK( load_data );
   load_info.change_filename = G_CALLBACK( change_load_filename );
 
-  create_shared_binary_dialog( &load_info, "Fuse - Load Binary Data",
+  create_shared_binary_dialog( &load_info, "FuseX - Load Binary Data",
                                BINARY_DIALOG_MODE_LOAD );
 
   /* Process the dialog */
@@ -215,7 +215,7 @@ change_load_filename( GtkButton *button GCC_UNUSED, gpointer user_data )
   char buffer[80];
   int error;
 
-  new_filename = ui_get_open_filename( "Fuse - Load Binary Data" );
+  new_filename = ui_get_open_filename( "FuseX - Load Binary Data" );
   if( !new_filename ) return;
 
   error = utils_read_file( new_filename, &new_file );
@@ -312,7 +312,7 @@ MENU_CALLBACK( menu_file_savebinarydata )
    */
   if( !save_info.filename )
   {
-    save_info.filename = ui_get_save_filename( "Fuse - Save Binary Data" );
+    save_info.filename = ui_get_save_filename( "FuseX - Save Binary Data" );
     if( !save_info.filename )
     {
       fuse_emulation_unpause();
@@ -323,7 +323,7 @@ MENU_CALLBACK( menu_file_savebinarydata )
   save_info.activate_data = G_CALLBACK( save_data );
   save_info.change_filename = G_CALLBACK( change_save_filename );
 
-  create_shared_binary_dialog( &save_info, "Fuse - Save Binary Data",
+  create_shared_binary_dialog( &save_info, "FuseX - Save Binary Data",
                                BINARY_DIALOG_MODE_SAVE );
 
   /* Process the dialog */
@@ -349,7 +349,7 @@ change_save_filename( GtkButton *button GCC_UNUSED, gpointer user_data )
   struct binary_info *info = user_data;
   char *new_filename;
 
-  new_filename = ui_get_save_filename( "Fuse - Save Binary Data" );
+  new_filename = ui_get_save_filename( "FuseX - Save Binary Data" );
   if( !new_filename ) return;
 
   free( info->filename );

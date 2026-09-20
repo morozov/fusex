@@ -155,10 +155,10 @@ ask_filename( void )
   filesel.exit_all_widgets = 0;
 
   if( widget_binary.load ) {
-    filesel.title = "Fuse - Load Binary Data";
+    filesel.title = "FuseX - Load Binary Data";
     widget_do_fileselector( &filesel );
   } else {
-    filesel.title = "Fuse - Save Binary Data";
+    filesel.title = "FuseX - Save Binary Data";
     widget_do_fileselector_save( &filesel );
   }
   if( !widget_filesel_name ) return;
@@ -412,7 +412,7 @@ menu_file_loadbinarydata( int action )
 
   fuse_emulation_pause();
 
-  widget_binary.filename = ui_get_open_filename( "Fuse - Load Binary Data" );
+  widget_binary.filename = ui_get_open_filename( "FuseX - Load Binary Data" );
   if( !widget_binary.filename ) {
     fuse_emulation_unpause();
     return 1;
@@ -426,7 +426,7 @@ menu_file_loadbinarydata( int action )
   }
 
   widget_binary.load = 1;
-  widget_binary.title = "Fuse - Load Binary Data";
+  widget_binary.title = "FuseX - Load Binary Data";
   init_widget_binary();
   /* Run dialog */
   widget_do_binary();
@@ -442,14 +442,14 @@ menu_file_savebinarydata( int action )
 {
   fuse_emulation_pause();
 
-  widget_binary.filename = ui_get_save_filename( "Fuse - Save Binary Data" );
+  widget_binary.filename = ui_get_save_filename( "FuseX - Save Binary Data" );
   if( !widget_binary.filename ) {
     fuse_emulation_unpause();
     return 1;
   }
 
   widget_binary.load = 0;
-  widget_binary.title = "Fuse - Save Binary Data";
+  widget_binary.title = "FuseX - Save Binary Data";
   init_widget_binary();
   /* Run dialog */
   widget_do_binary();

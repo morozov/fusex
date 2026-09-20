@@ -1,8 +1,7 @@
-The Free Unix Spectrum Emulator (Fuse) 1.9.2
+FuseX 1.9.2
 ============================================
 
-Fuse (the Free Unix Spectrum Emulator) was originally, and somewhat
-unsurprisingly, an emulator of the ZX Spectrum (a popular 1980s home
+FuseX is an emulator of the ZX Spectrum (a popular 1980s home
 computer, especially in the UK) for Unix. However, it has now also
 been ported to macOS, which may or may not count as a Unix variant
 depending on your advocacy position and Windows which definitely isn't
@@ -39,10 +38,8 @@ What Fuse does have:
 Help! <xyz> doesn't work
 ------------------------
 
-If you're having a problem using/running/building Fuse, the two places
-you're most likely to get help are the development mailing list
-<fuse-emulator-devel@lists.sf.net> or the official forums at
-<https://sourceforge.net/p/fuse-emulator/discussion/>.
+If you're having a problem using/running/building FuseX, report it at
+<https://github.com/speccytools/fusex/issues>.
 
 What you'll need to run Fuse
 ----------------------------
@@ -82,7 +79,7 @@ Windows
 * pthreads-win32 library will give the ability to use posix threads, needed by
   some peripherals.
 
-Building Fuse
+Building FuseX
 -------------
 
 See the file `INSTALL' for more detailed information.
@@ -90,30 +87,17 @@ See the file `INSTALL' for more detailed information.
 Closing comments
 ----------------
 
-Fuse has its own home page, which you can find at:
+FuseX has its own home page, which you can find at:
 
-https://fuse-emulator.sourceforge.net/
+https://speccytools.org/
 
 and contains much of the information listed here. 
 
-News of new versions of Fuse (and other important Fuse-related
-announcements) are distributed via the fuse-emulator-announce mailing
-list on SourceForge; see
-https://lists.sourceforge.net/lists/listinfo/fuse-emulator-announce
-for details on how to subscribe and the like.
-
-If you've got any bug reports, suggestions or the like for Fuse, or
-just want to get involved in the development, this is coordinated via
-the fuse-emulator-devel mailing list,
-https://lists.sourceforge.net/lists/listinfo/fuse-emulator-devel
-and the Fuse project page on SourceForge,
-https://sourceforge.net/projects/fuse-emulator/
+If you've got any bug reports or suggestions for FuseX, report them at
+https://github.com/speccytools/fusex/issues.
 
 Maintainer release notes are in `hacking/releasing.md'.
 
 For Spectrum discussions not directly related to Fuse, visit either the
 Usenet newsgroup `comp.sys.sinclair' or the World of Spectrum forums
 <http://www.worldofspectrum.org/forums/>.
-
-Philip Kendall <philip-fuse@shadowmagic.org.uk>
-23rd August, 2026

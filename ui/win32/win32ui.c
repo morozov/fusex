@@ -467,16 +467,16 @@ ui_error_specific( ui_error_level severity, const char *message )
   switch( severity ) {
 
   case UI_ERROR_INFO:
-    MessageBox( fuse_hWnd, message, "Fuse - Info", MB_ICONINFORMATION | MB_OK );
+    MessageBox( fuse_hWnd, message, "FuseX - Info", MB_ICONINFORMATION | MB_OK );
     break;
   case UI_ERROR_WARNING:
-    MessageBox( fuse_hWnd, message, "Fuse - Warning", MB_ICONWARNING | MB_OK );
+    MessageBox( fuse_hWnd, message, "FuseX - Warning", MB_ICONWARNING | MB_OK );
     break;
   case UI_ERROR_ERROR:
-    MessageBox( fuse_hWnd, message, "Fuse - Error", MB_ICONERROR | MB_OK );
+    MessageBox( fuse_hWnd, message, "FuseX - Error", MB_ICONERROR | MB_OK );
     break;
   default:
-    MessageBox( fuse_hWnd, message, "Fuse - (Unknown Error Level)",
+    MessageBox( fuse_hWnd, message, "FuseX - (Unknown Error Level)",
                 MB_ICONINFORMATION | MB_OK );
     break;
 
@@ -532,7 +532,7 @@ menu_get_scaler( scaler_available_fn selector )
   }
 
   /* Populate win32ui_select_info */
-  items.dialog_title = TEXT( "Fuse - Select Scaler" );
+  items.dialog_title = TEXT( "FuseX - Select Scaler" );
   items.labels = malloc( count * sizeof( char * ) );
   items.length = count; 
 
@@ -639,7 +639,7 @@ menu_machine_select( int action )
   fuse_emulation_pause();
 
   /* Populate win32ui_select_info */
-  items.dialog_title = TEXT( "Fuse - Select Machine" );
+  items.dialog_title = TEXT( "FuseX - Select Machine" );
   items.labels = malloc( machine_count * sizeof( char * ) );
   items.length = machine_count; 
 
@@ -764,7 +764,7 @@ ui_confirm_joystick( libspectrum_joystick libspectrum_type, int inputs )
 
   /* Populate win32ui_select_info */
   /* FIXME: libspectrum_joystick_name is not unicode compliant */
-  _sntprintf( title, ARRAY_SIZE( title ), _T( "Fuse - Configure %s Joystick" ),
+  _sntprintf( title, ARRAY_SIZE( title ), _T( "FuseX - Configure %s Joystick" ),
 	    libspectrum_joystick_name( libspectrum_type ) );
   items.dialog_title = title;
   items.length = JOYSTICK_CONN_COUNT; 

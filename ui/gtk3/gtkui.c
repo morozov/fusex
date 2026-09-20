@@ -342,7 +342,7 @@ ui_init( int *argc, char ***argv )
 
   /* The application is what holds the menu accelerators; Fuse runs its own
      main loop, so it is registered but never run */
-  gtkui_app = gtk_application_new( "net.sourceforge.fuse_emulator.Fuse",
+  gtkui_app = gtk_application_new( "org.speccytools.FuseX",
                                    G_APPLICATION_NON_UNIQUE );
   if( !g_application_register( G_APPLICATION( gtkui_app ), NULL, NULL ) ) {
     fprintf(stderr,"%s: couldn't register the application at %s:%d\n",
@@ -356,12 +356,12 @@ ui_init( int *argc, char ***argv )
 
 #ifdef FUSE_ICON_AVAILABLE
   gtk_window_set_icon_name( GTK_WINDOW( gtkui_window ),
-                            "net.sourceforge.fuse_emulator.Fuse" );
+                            "org.speccytools.FuseX" );
 #endif
 
   settings = gtk_widget_get_settings( GTK_WIDGET( gtkui_window ) );
   g_object_set( settings, "gtk-menu-bar-accel", "F1", NULL );
-  gtk_window_set_title( GTK_WINDOW(gtkui_window), "Fuse" );
+  gtk_window_set_title( GTK_WINDOW(gtkui_window), "FuseX" );
 
   g_signal_connect(G_OBJECT(gtkui_window), "delete-event",
 		   G_CALLBACK(gtkui_delete), NULL);
@@ -623,10 +623,10 @@ ui_error_specific( ui_error_level severity, const char *message )
 
   /* Set the appropriate title */
   switch( severity ) {
-  case UI_ERROR_INFO:	 title = "Fuse - Info"; break;
-  case UI_ERROR_WARNING: title = "Fuse - Warning"; break;
-  case UI_ERROR_ERROR:	 title = "Fuse - Error"; break;
-  default:		 title = "Fuse - (Unknown Error Level)"; break;
+  case UI_ERROR_INFO:	 title = "FuseX - Info"; break;
+  case UI_ERROR_WARNING: title = "FuseX - Warning"; break;
+  case UI_ERROR_ERROR:	 title = "FuseX - Error"; break;
+  default:		 title = "FuseX - (Unknown Error Level)"; break;
   }
 
   /* Create the dialog box */
@@ -789,7 +789,7 @@ menu_get_scaler( scaler_available_fn selector )
   count = 0;
 
   /* Create the necessary widgets */
-  dialog.dialog = gtkstock_dialog_new( "Fuse - Select Scaler", NULL );
+  dialog.dialog = gtkstock_dialog_new( "FuseX - Select Scaler", NULL );
   content_area = gtk_dialog_get_content_area( GTK_DIALOG( dialog.dialog ) );
 
   for( scaler = 0; scaler < SCALER_NUM; scaler++ ) {
@@ -931,7 +931,7 @@ MENU_CALLBACK( menu_machine_select )
   fuse_emulation_pause();
 
   /* Create the necessary widgets */
-  dialog.dialog = gtkstock_dialog_new( "Fuse - Select Machine", NULL );
+  dialog.dialog = gtkstock_dialog_new( "FuseX - Select Machine", NULL );
   content_area = gtk_dialog_get_content_area( GTK_DIALOG( dialog.dialog ) );
 
   dialog.buttons[0] =
@@ -1013,11 +1013,11 @@ MENU_CALLBACK( menu_help_keyboard )
 MENU_CALLBACK( menu_help_about )
 {
   gtk_show_about_dialog( GTK_WINDOW( gtkui_window ),
-                         "program-name", "Fuse",
-                         "comments", "The Free Unix Spectrum Emulator",
+                         "program-name", "FuseX",
+                         "comments", "ZX Spectrum emulator",
                          "copyright", FUSE_COPYRIGHT,
 #ifdef FUSE_ICON_AVAILABLE
-                         "logo-icon-name", "net.sourceforge.fuse_emulator.Fuse",
+                         "logo-icon-name", "org.speccytools.FuseX",
 #else
                          "logo-icon-name", NULL,
 #endif
@@ -1172,7 +1172,7 @@ ui_confirm_joystick( libspectrum_joystick libspectrum_type,
   fuse_emulation_pause();
 
   /* Create the necessary widgets */
-  snprintf( title, sizeof( title ), "Fuse - Configure %s Joystick",
+  snprintf( title, sizeof( title ), "FuseX - Configure %s Joystick",
 	    libspectrum_joystick_name( libspectrum_type ) );
   dialog.dialog = gtkstock_dialog_new( title, NULL );
   content_area = gtk_dialog_get_content_area( GTK_DIALOG( dialog.dialog ) );

@@ -2450,12 +2450,12 @@ save_as_exit:
 
 - (void)showAlertPanel:(NSString*)message
 {
-  NSRunAlertPanel(@"Fuse - Info", message, nil, nil, nil);
+  NSRunAlertPanel(@"FuseX - Info", message, nil, nil, nil);
 }
 
 - (void)showCriticalAlertPanel:(NSString*)message
 {
-  NSRunCriticalAlertPanel(@"Fuse - Error", message, nil, nil, nil);
+  NSRunCriticalAlertPanel(@"FuseX - Error", message, nil, nil, nil);
 }
 
 -(ui_confirm_save_t) confirmSave:(NSString*)theMessage

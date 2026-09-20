@@ -2,10 +2,10 @@
 Version=1.0
 Type=Application
 Categories=Game;Emulator;@EXTRA_DESKTOP_CATEGORIES@
-Name=Fuse
+Name=FuseX
 GenericName=Spectrum Emulator
 Comment=Emulator of the 1980s ZX Spectrum home computer and its various clones
 MimeType=@MIME_TYPES@
 Exec=fuse@FUSE_BIN_EXTENSION@ %f
-Icon=net.sourceforge.fuse_emulator.Fuse
+Icon=org.speccytools.FuseX
 Keywords=sinclair;zx;game;retro;

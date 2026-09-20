@@ -328,7 +328,7 @@ MENU_CALLBACK( menu_machine_memorybrowser )
 
   fuse_emulation_pause();
 
-  dialog = gtkstock_dialog_new( "Fuse - Memory Browser", NULL );
+  dialog = gtkstock_dialog_new( "FuseX - Memory Browser", NULL );
   content_area = gtk_dialog_get_content_area( GTK_DIALOG( dialog ) );
 
   /* Keyboard shortcuts */

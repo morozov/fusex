@@ -290,7 +290,7 @@ ui_media_drive_save( int controller, int which, int saveas )
   fuse_emulation_pause();
 
   if( saveas ) {
-    snprintf( title, sizeof(title), "Fuse - Write %s As", drive->name );
+    snprintf( title, sizeof(title), "FuseX - Write %s As", drive->name );
     filename = ui_get_save_filename( title );
     if( !filename ) {
       fuse_emulation_unpause();

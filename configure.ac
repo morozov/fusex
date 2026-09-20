@@ -16,7 +16,7 @@ dnl 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 dnl
 dnl Author contact information:
 dnl
-dnl E-mail: philip-fuse@shadowmagic.org.uk
+dnl Project website: https://speccytools.org/
 
 dnl Package version (user-visible: tarballs, fuse --version, NSIS text).
 dnl Keep README, man/fuse.1 (.TH third field), metainfo.xml, and fusepb MARKETING_VERSION in sync.
@@ -32,8 +32,8 @@ m4_define([fuse_rc_version], [fuse_major_version,fuse_minor_version,fuse_micro_v
 
 dnl Package info
 m4_define([fuse_copyright], ["(c) 1999-2026 Philip Kendall and others"])
-m4_define([fuse_url], [https://fuse-emulator.sourceforge.net/])
-m4_define([fuse_bugreport], [https://sourceforge.net/p/fuse-emulator/bugs/])
+m4_define([fuse_url], [https://speccytools.org/])
+m4_define([fuse_bugreport], [https://github.com/speccytools/fusex/issues])
 
 AC_INIT([fusex],[fuse_version],[fuse_bugreport],[fusex],[fuse_url])
 AC_CONFIG_SRCDIR(fuse.c)

@@ -192,7 +192,7 @@ ui_statusbar_update_speed( float speed )
 {
   char buffer[ 32 ];
 
-  snprintf( buffer, sizeof( buffer ), "Fuse - %3.0f%%", speed );
+  snprintf( buffer, sizeof( buffer ), "FuseX - %3.0f%%", speed );
   sdl2display_set_title( buffer );
 
   return 0;
