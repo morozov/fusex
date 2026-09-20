@@ -465,8 +465,8 @@ static void fuse_show_copyright(void)
    FUSE_COPYRIGHT "; see the file\n"
    "'AUTHORS' for more details.\n"
    "\n"
-   "For help, please mail <fuse-emulator-devel@lists.sf.net> or use\n"
-   "the forums at <https://sourceforge.net/p/fuse-emulator/discussion/>.\n"
+   "For help, please visit <https://speccytools.org/> or\n"
+   "report issues at <https://github.com/speccytools/fusex/issues>.\n"
    "\n"
    "This program is distributed in the hope that it will be useful,\n"
    "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
@@ -476,7 +476,7 @@ static void fuse_show_copyright(void)
 
 static void fuse_show_version( void )
 {
-  printf( "The Free Unix Spectrum Emulator (Fuse) version " VERSION ".\n" );
+  printf( "FuseX version " VERSION ".\n" );
 
   fuse_show_test_build_info();
 }
@@ -523,9 +523,9 @@ static void fuse_show_help( void )
    "--tape <filename>      Open tape file <filename>.\n"
    "--version              Print version number and exit.\n"
    "\n"
-   "For help, please mail <fuse-emulator-devel@lists.sf.net> or use\n"
-   "the forums at <https://sourceforge.net/p/fuse-emulator/discussion/>.\n"
-   "For complete documentation, see the manual page of Fuse.\n\n" );
+   "For help, please visit <https://speccytools.org/> or\n"
+   "report issues at <https://github.com/speccytools/fusex/issues>.\n"
+   "For complete documentation, see the FuseX manual page.\n\n" );
 }
 
 /* Stop all activities associated with actual Spectrum emulation */

@@ -1205,7 +1205,7 @@ ui_statusbar_update_speed( float speed )
 
   list[0] = buffer;
   list[1] = 0;
-  snprintf( buffer, 16, "Fuse - %4.0f%%", speed );
+  snprintf( buffer, 16, "FuseX - %4.0f%%", speed );
 
   XStringListToTextProperty( list, 1, &text);
   XSetWMName( display, xui_mainWindow, &text );

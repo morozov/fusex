@@ -103,7 +103,7 @@ create_dialog( void )
   const struct option_t *option;
 
   /* Give me a new dialog box */
-  dialog = gtkstock_dialog_new( "Fuse - Filter Options",
+  dialog = gtkstock_dialog_new( "FuseX - Filter Options",
         G_CALLBACK( delete_dialog ) );
 
 gtk_widget_set_size_request (dialog, 300, 600);

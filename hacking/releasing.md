@@ -69,7 +69,7 @@ existing style.
    new top-of-file release entry, review it, and then apply it after
    confirmation. Otherwise, update `ChangeLog` manually in the existing
    format.
-2. Update `data/net.sourceforge.fuse_emulator.Fuse.metainfo.xml` with
+2. Update `data/org.speccytools.FuseX.metainfo.xml` with
    the high level changes in the release.
 3. Run `update-release.py` with `--dry-run`.
 4. Run it again without `--dry-run` once the changes look correct.

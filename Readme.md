@@ -1,6 +1,6 @@
-# FuseX - Fuse Emulator Fork
+# FuseX
 
-This is a fork of Fuse (the Free Unix Spectrum Emulator), originally forked from [Fuse for macOS](https://sourceforge.net/p/fuse-for-macosx/fuse-for-macos) on SourceForge.
+FuseX is a ZX Spectrum emulator forked from [Fuse for macOS](https://sourceforge.net/p/fuse-for-macosx/fuse-for-macos) on SourceForge.
 
 This fork is maintained for [speccytools](https://github.com/speccytools).
 

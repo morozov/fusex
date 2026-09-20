@@ -266,7 +266,7 @@ utils_open_snap( void )
   char *filename;
   int error;
 
-  filename = ui_get_open_filename( "Fuse - Load Snapshot" );
+  filename = ui_get_open_filename( "FuseX - Load Snapshot" );
   if( !filename ) return -1;
 
   error = snapshot_read( filename );

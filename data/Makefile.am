@@ -27,10 +27,10 @@ fusemimedir = $(DESKTOP_DATADIR)/mime/packages
 fusemime_DATA = data/fuse.xml
 
 appdatadir = $(DESKTOP_DATADIR)/applications
-appdata_DATA = data/net.sourceforge.fuse_emulator.Fuse.desktop
+appdata_DATA = data/org.speccytools.FuseX.desktop
 
 metainfodir = $(DESKTOP_DATADIR)/metainfo
-metainfo_DATA = data/net.sourceforge.fuse_emulator.Fuse.metainfo.xml
+metainfo_DATA = data/org.speccytools.FuseX.metainfo.xml
 
 iconsdatadir = $(DESKTOP_DATADIR)/icons/hicolor
 icons16dir = $(iconsdatadir)/16x16/apps
@@ -40,12 +40,12 @@ icons64dir = $(iconsdatadir)/64x64/apps
 icons128dir = $(iconsdatadir)/128x128/apps
 icons256dir = $(iconsdatadir)/256x256/apps
 
-dist_icons16_DATA = data/icons/16x16/net.sourceforge.fuse_emulator.Fuse.png
-dist_icons32_DATA = data/icons/32x32/net.sourceforge.fuse_emulator.Fuse.png
-dist_icons48_DATA = data/icons/48x48/net.sourceforge.fuse_emulator.Fuse.png
-dist_icons64_DATA = data/icons/64x64/net.sourceforge.fuse_emulator.Fuse.png
-dist_icons128_DATA = data/icons/128x128/net.sourceforge.fuse_emulator.Fuse.png
-dist_icons256_DATA = data/icons/256x256/net.sourceforge.fuse_emulator.Fuse.png
+dist_icons16_DATA = data/icons/16x16/org.speccytools.FuseX.png
+dist_icons32_DATA = data/icons/32x32/org.speccytools.FuseX.png
+dist_icons48_DATA = data/icons/48x48/org.speccytools.FuseX.png
+dist_icons64_DATA = data/icons/64x64/org.speccytools.FuseX.png
+dist_icons128_DATA = data/icons/128x128/org.speccytools.FuseX.png
+dist_icons256_DATA = data/icons/256x256/org.speccytools.FuseX.png
 
 mimeicons16dir = $(iconsdatadir)/16x16/mimetypes
 mimeicons32dir = $(iconsdatadir)/32x32/mimetypes
@@ -80,14 +80,14 @@ if UI_GTK
 EXTRA_DESKTOP_CATEGORIES = GTK;
 endif
 
-# Generate net.sourceforge.fuse_emulator.Fuse.desktop from fuse.xml to keep mime types list in sync
-data/net.sourceforge.fuse_emulator.Fuse.desktop: $(srcdir)/data/net.sourceforge.fuse_emulator.Fuse.desktop.in data/fuse.xml
+# Generate org.speccytools.FuseX.desktop from fuse.xml to keep mime types list in sync
+data/org.speccytools.FuseX.desktop: $(srcdir)/data/org.speccytools.FuseX.desktop.in data/fuse.xml
 	$(AM_V_GEN)$(MKDIR_P) data; \
 	list=`$(SED) -e '/<mime-type/ s/.*<mime-type type="\(.*\)">.*/\1;/' -e t -e d < data/fuse.xml | tr -d '\n'` && \
 	$(SED) -e "s|@MIME_TYPES@|$$list|" \
 	       -e 's|@FUSE_BIN_EXTENSION@|$(EXEEXT)|' \
 	       -e 's|@EXTRA_DESKTOP_CATEGORIES@|$(EXTRA_DESKTOP_CATEGORIES)|' \
-		< $(srcdir)/data/net.sourceforge.fuse_emulator.Fuse.desktop.in > $@
+		< $(srcdir)/data/org.speccytools.FuseX.desktop.in > $@
 
 update-database-cache:
 	if test -z "$(DESTDIR)"; then \
@@ -101,7 +101,7 @@ install-data-hook: update-database-cache
 
 uninstall-hook: update-database-cache
 
-validate: data/net.sourceforge.fuse_emulator.Fuse.desktop
+validate: data/org.speccytools.FuseX.desktop
 	( dfvalidate=`which desktop-file-validate`; \
 	  if test x$$dfvalidate != x && test -x $$dfvalidate; then \
             $$dfvalidate $< || ( echo "* $< INVALID *"; exit 1 ) \
@@ -119,8 +119,8 @@ dist_bashcompletion_DATA = data/shell-completion/bash/fuse
 endif
 
 EXTRA_DIST += \
-              data/net.sourceforge.fuse_emulator.Fuse.desktop.in \
-              data/net.sourceforge.fuse_emulator.Fuse.metainfo.xml \
+              data/org.speccytools.FuseX.desktop.in \
+              data/org.speccytools.FuseX.metainfo.xml \
               data/fuse.xml.in \
               data/shell-completion/diff_options.sh \
               data/win32/LICENSES.txt \
@@ -138,7 +138,7 @@ EXTRA_DIST += \
               data/win32/generate-appcast.sh
 
 CLEANFILES += \
-              data/net.sourceforge.fuse_emulator.Fuse.desktop \
+              data/org.speccytools.FuseX.desktop \
               data/fuse.xml \
               data/shell-completion/bash.txt \
               data/shell-completion/man.txt \
