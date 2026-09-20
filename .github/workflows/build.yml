@@ -1,6 +1,8 @@
 name: Build
 
 on:
+  push:
+    tags: ['fusex-ci-*']
   workflow_dispatch:
     inputs:
       version:
@@ -31,6 +33,6 @@ jobs:
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: FuseX-${{ inputs.version }}.flatpak
+          bundle: FuseX-${{ inputs.version || github.ref_name }}.flatpak
           manifest-path: org.speccytools.FuseX.json
           cache-key: flatpak-builder-${{ github.sha }}
