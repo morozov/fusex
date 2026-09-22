@@ -1,0 +1,139 @@
+# Maintainer: Sergei Morozov <morozovby@gmail.com>
+
+pkgname=fusex-git
+pkgver=1.9.2.fusex.0.1.r30.g16bfbbe3
+pkgrel=1
+pkgdesc="ZX Spectrum emulator: the speccytools fork of Fuse, with the GTK 3 UI and libfusex"
+arch=('x86_64')
+url="https://github.com/speccytools/fusex"
+license=('GPL-2.0-or-later')
+depends=('gtk3' 'glib2' 'libxml2' 'libpng' 'zlib' 'bzip2' 'audiofile' 'alsa-lib')
+makedepends=('git' 'autoconf' 'automake' 'libtool' 'pkgconf' 'perl')
+provides=('fusex' 'libfusex.so')
+conflicts=('fusex')
+
+# The libfusex link relinks the program objects into a shared object by hand
+# (ui/null/Makefile.am all-local); LTO objects do not survive that.
+options=('!lto')
+
+# FuseX ships upstream Fuse's desktop id, so an unmodified install would collide
+# with a fuse-emulator package. Rebrand to our own id instead: the GTK
+# application id has to match the .desktop basename for the shell to associate
+# the window with the launcher, so it is patched in prepare() to agree.
+_appid=io.github.speccytools.FuseX
+
+# Packaged from the checkout this PKGBUILD lives in, at whatever branch is
+# checked out there. Override with FUSEX_REPO=/path/to/fusex makepkg.
+_repo="${FUSEX_REPO:-$(cd "${startdir:-.}/../.." && pwd)}"
+
+source=("$pkgname::git+file://$_repo"
+        "libspectrum::git+file://$_repo/3rdparty/libspectrum")
+sha256sums=('SKIP'
+            'SKIP')
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+  cd "$srcdir/$pkgname"
+
+  # .gitmodules gives libspectrum a relative url, which would resolve against
+  # the clone's origin. Point it at the sibling source instead.
+  git config submodule.3rdparty/libspectrum.url "$srcdir/libspectrum"
+  git -c protocol.file.allow=always submodule update --init 3rdparty/libspectrum
+
+  # Rebrand: application id, desktop entry, metainfo, completion command.
+  sed -i "s/net\.sourceforge\.fuse_emulator\.Fuse/$_appid/g" ui/gtk3/gtkui.c
+
+  sed -i -e 's/^Name=Fuse$/Name=FuseX/' \
+         -e 's/^Exec=fuse@FUSE_BIN_EXTENSION@ %f$/Exec=fusex %f/' \
+         -e "s/^Icon=net\.sourceforge\.fuse_emulator\.Fuse$/Icon=$_appid/" \
+         data/net.sourceforge.fuse_emulator.Fuse.desktop.in
+
+  sed -i -e "s|<id>net\.sourceforge\.fuse_emulator\.Fuse</id>|<id>$_appid</id>|" \
+         -e 's|<name>Fuse</name>|<name>FuseX</name>|' \
+         -e "s|<launchable type=\"desktop-id\">net\.sourceforge\.fuse_emulator\.Fuse\.desktop</launchable>|<launchable type=\"desktop-id\">$_appid.desktop</launchable>|" \
+         -e '/^  <provides>$/,/^  <\/provides>$/d' \
+         -e '/^  <replaces>$/,/^  <\/replaces>$/d' \
+         data/net.sourceforge.fuse_emulator.Fuse.metainfo.xml
+
+  sed -i 's/^complete -F _fuse -o filenames fuse$/complete -F _fuse -o filenames fusex/' \
+         data/shell-completion/bash/fuse
+
+  sed -i -e 's/^\.TH fuse 1 /.TH fusex 1 /' \
+         -e 's/^fuse \\(em /fusex \\(em /' \
+         man/fuse.1
+
+  ./autogen.sh
+  cd 3rdparty/libspectrum && ./autogen.sh
+}
+
+build() {
+  # A shared libspectrum records its install path, which nothing outside this
+  # build dir can resolve; both the binary and libfusex absorb the archive
+  # instead, so the package carries no libspectrum at all. --with-pic is what
+  # makes the archive linkable into libfusex.so.
+  cd "$srcdir/$pkgname/3rdparty/libspectrum"
+  ./configure --prefix="$srcdir/dist" \
+              --disable-shared --with-pic --without-libgcrypt
+  make
+  make install
+
+  # A libspectrum package installed on the build host would otherwise win the
+  # linker's search: configure emits -L/usr/lib ahead of the pkg-config path,
+  # and an older libspectrum there fails the link on symbols this tree needs.
+  export PKG_CONFIG_PATH="$srcdir/dist/lib/pkgconfig"
+  export CPPFLAGS="-I$srcdir/dist/include${CPPFLAGS:+ $CPPFLAGS}"
+  export LDFLAGS="-L$srcdir/dist/lib${LDFLAGS:+ $LDFLAGS}"
+
+  # A source tree holds one configuration, so each UI gets its own build dir.
+  # --without-pthread disables Spectranet, whose SSH offload would otherwise
+  # hard-require prebuilt mbedtls/libssh2 archives in 3rdparty/dist.
+  mkdir -p "$srcdir/$pkgname/build-gtk"
+  cd "$srcdir/$pkgname/build-gtk"
+  ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+               --with-gtk --without-pthread \
+               --enable-desktop-integration \
+               --with-bash-completion-dir=/usr/share/bash-completion/completions
+  make
+
+  # Any null-UI build also produces libfusex.so as a side effect of all-local.
+  mkdir -p "$srcdir/$pkgname/build-null"
+  cd "$srcdir/$pkgname/build-null"
+  ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+               --with-null-ui --without-pthread --with-audio-driver=null
+  make
+}
+
+check() {
+  cd "$srcdir/$pkgname/build-null"
+  # check-local links roms/ into the build dir but not the lib/tests fixtures
+  # the unit tests open relative to the working directory.
+  ln -sfn ../lib lib
+  make check
+}
+
+package() {
+  make -C "$srcdir/$pkgname/build-gtk" DESTDIR="$pkgdir" install
+
+  # libfusex has no install rule of its own.
+  install -Dm755 "$srcdir/$pkgname/build-null/libfusex.so" \
+                 "$pkgdir/usr/lib/libfusex.so"
+
+  cd "$pkgdir"
+  mv usr/bin/fuse usr/bin/fusex
+  mv usr/share/man/man1/fuse.1 usr/share/man/man1/fusex.1
+  mv usr/share/bash-completion/completions/fuse \
+     usr/share/bash-completion/completions/fusex
+  mv usr/share/mime/packages/fuse.xml usr/share/mime/packages/fusex.xml
+  mv "usr/share/applications/net.sourceforge.fuse_emulator.Fuse.desktop" \
+     "usr/share/applications/$_appid.desktop"
+  mv "usr/share/metainfo/net.sourceforge.fuse_emulator.Fuse.metainfo.xml" \
+     "usr/share/metainfo/$_appid.metainfo.xml"
+  local _dir
+  for _dir in usr/share/icons/hicolor/*/apps; do
+    mv "$_dir/net.sourceforge.fuse_emulator.Fuse.png" "$_dir/$_appid.png"
+  done
+}
