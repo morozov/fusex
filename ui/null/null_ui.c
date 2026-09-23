@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include "display.h"
+#include "event.h"
 #include "keyboard.h"
 #include "machine.h"
 #include "spectrum.h"
@@ -136,6 +137,14 @@ ui_confirm_joystick( libspectrum_joystick libspectrum_type, int inputs )
 int
 ui_debugger_activate( void )
 {
+  /* There is no debugger window to raise, and no nested event loop to hold the
+     machine in: a null-UI build is driven by an embedding process, and that
+     process examines or continues the halted machine.
+
+     Schedule an event for the current tstate so that z80_do_opcodes() returns
+     once the instruction it is on finishes. */
+  event_add( 0, event_type_null );
+
   /* No error */
   return 0;
 }
