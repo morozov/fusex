@@ -11,8 +11,16 @@ jobs:
     with:
       version: ${{ github.ref_name }}
 
+  package-windows-x64:
+    name: Package for Windows x64
+    uses: ./.github/workflows/package-windows-x64.yml
+    with:
+      version: ${{ github.ref_name }}
+
   release:
-    needs: package-flatpak
+    needs:
+      - package-flatpak
+      - package-windows-x64
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,4 +42,6 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           name: ${{ steps.release.outputs.name }}
-          files: release/*.flatpak
+          files: |
+            release/*.flatpak
+            release/*.exe
