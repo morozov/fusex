@@ -8,31 +8,13 @@ documentation, read fuse.html.
 Requirements
 ------------
 
-A supported 32-bit or 64-bit Windows system for the bundled 32-bit build.
+A 64-bit Windows system is required for this x64 build.
 
 Libraries
 ---------
 
-These binaries are built with the MinGW/Cygwin packages used by the current
-Windows CI workflow. Depending on the selected UI and enabled features, the
-package may include DLLs from these components:
-
-    audiofile
-    bzip2
-    libFLAC
-    libgcrypt
-    libgpg-error
-    libOGG
-    libpng
-    libspectrum
-    libstdc++
-    libxml2
-    win-iconv
-    winpthreads
-    xz / liblzma
-    zlib
-    SDL
-    SDL2
+This package is built with GNU MinGW-w64 on Linux. It includes libraries for
+libspectrum, mbedTLS, zlib, bzip2, PNG, XML, WinSparkle, and the MinGW runtime.
 
 See LICENSES.txt for copyright and license details.
 
