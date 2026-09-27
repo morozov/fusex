@@ -26,6 +26,10 @@ ARCHIVE_APP_PATH = $(ARCHIVE_PATH)/Products/Applications/FuseX.app
 RELEASE_ZIP_PATH ?= ./build/FuseX-notarize.zip
 NOTARYTOOL_PROFILE ?=
 FUSEX_VERSION ?= $(shell awk -F'= ' '/MARKETING_VERSION = / { gsub(/[";]/, "", $$2); print $$2; exit }' fusepb/FuseX.xcodeproj/project.pbxproj)
+MARKETING_VERSION ?=
+ARCHS ?=
+ONLY_ACTIVE_ARCH ?=
+MACOSX_DEPLOYMENT_TARGET ?=
 DMG_NAME ?= FuseX-$(FUSEX_VERSION).dmg
 APPCAST_DIR ?= ./build/appcast
 APPCAST_ARCHIVE ?= ./$(DMG_NAME)
@@ -58,6 +62,22 @@ ifneq ($(PROVISIONING_PROFILE_SPECIFIER),)
 	XCODEBUILD_SIGN_ARGS += PROVISIONING_PROFILE_SPECIFIER="$(PROVISIONING_PROFILE_SPECIFIER)"
 endif
 
+XCODEBUILD_BUILD_ARGS :=
+ifneq ($(ARCHS),)
+	XCODEBUILD_BUILD_ARGS += ARCHS="$(ARCHS)"
+endif
+ifneq ($(ONLY_ACTIVE_ARCH),)
+	XCODEBUILD_BUILD_ARGS += ONLY_ACTIVE_ARCH="$(ONLY_ACTIVE_ARCH)"
+endif
+ifneq ($(MACOSX_DEPLOYMENT_TARGET),)
+	XCODEBUILD_BUILD_ARGS += MACOSX_DEPLOYMENT_TARGET="$(MACOSX_DEPLOYMENT_TARGET)"
+endif
+
+XCODEBUILD_APP_ARGS :=
+ifneq ($(MARKETING_VERSION),)
+	XCODEBUILD_APP_ARGS += MARKETING_VERSION="$(MARKETING_VERSION)"
+endif
+
 all: 3rdparty
 
 fusepb:
@@ -74,6 +94,7 @@ audiofile:
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 libgcrypt:
@@ -85,6 +106,7 @@ libgcrypt:
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 FuseGenerator:
@@ -101,6 +123,7 @@ FuseGenerator:
 		DEVELOPMENT_TEAM="$(FUSEGENERATOR_DEVELOPMENT_TEAM)" \
 		CODE_SIGN_IDENTITY="$(FUSEGENERATOR_CODE_SIGN_IDENTITY)" \
 		CODE_SIGN_STYLE="$(FUSEGENERATOR_CODE_SIGN_STYLE)" \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 FuseImporter:
@@ -112,6 +135,7 @@ FuseImporter:
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 mbedtls:
@@ -123,6 +147,7 @@ mbedtls:
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 libssh2: mbedtls
@@ -134,6 +159,7 @@ libssh2: mbedtls
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 # Static, so libfusex absorbs it rather than recording the path it was built at.
@@ -190,6 +216,8 @@ fusex: 3rdparty fusepb
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+		$(XCODEBUILD_BUILD_ARGS) \
+		$(XCODEBUILD_APP_ARGS) \
 		$(XCODEBUILD_SIGN_ARGS)
 
 release-clean:
@@ -212,6 +240,8 @@ archive: 3rdparty fusepb
 		SYMROOT=build \
 		BUILD_DIR=build \
 		CONFIGURATION_BUILD_DIR=build/Deployment \
+			$(XCODEBUILD_BUILD_ARGS) \
+			$(XCODEBUILD_APP_ARGS) \
 			$(XCODEBUILD_SIGN_ARGS)
 	@echo "Archive created at: $(ARCHIVE_PATH)"
 
