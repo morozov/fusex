@@ -5,6 +5,12 @@ on:
     tags: ['*.*.*-fusex-*']
 
 jobs:
+  package-macos:
+    name: Package for macOS
+    uses: ./.github/workflows/package-macos.yml
+    with:
+      version: ${{ github.ref_name }}
+
   package-flatpak:
     name: Package Flatpak
     uses: ./.github/workflows/package-flatpak.yml
@@ -19,6 +25,7 @@ jobs:
 
   release:
     needs:
+      - package-macos
       - package-flatpak
       - package-windows-x64
     runs-on: ubuntu-latest
@@ -45,3 +52,4 @@ jobs:
           files: |
             release/*.flatpak
             release/*.exe
+            release/*.dmg
