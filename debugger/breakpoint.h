@@ -107,6 +107,12 @@ typedef struct debugger_breakpoint {
   debugger_expression *condition; /* Conditional expression to activate this
 				     breakpoint */
 
+  /* Set when this breakpoint was created by a GDB RSP Z request. */
+  int gdbserver_owned;
+  int gdbserver_type;
+  libspectrum_word gdbserver_address;
+  size_t gdbserver_length;
+
   char *commands;
 
 } debugger_breakpoint;
