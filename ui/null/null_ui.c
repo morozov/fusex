@@ -23,14 +23,68 @@
 
 #include "config.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "display.h"
 #include "keyboard.h"
+#include "machine.h"
 #include "ui/ui.h"
+
+#include "fusex_display.h"
 
 #include "../uijoystick.c"
 
 keysyms_map_t keysyms_map[] = {
   { 0xff, 0 } /* End marker */
 };
+
+static uint8_t *null_display_pixels;
+static fusex_display_info_t null_display_info;
+static fusex_display_frame_t null_display_frame;
+static uint64_t null_display_generation;
+
+static void
+null_display_pixel( int x, int y, int colour )
+{
+  if( x >= 0 && x < null_display_info.width &&
+      y >= 0 && y < null_display_info.height )
+    null_display_pixels[ y * null_display_info.width + x ] = (uint8_t)colour;
+}
+
+static void
+null_display_plot8( int x, int y, libspectrum_byte data,
+                    libspectrum_byte ink, libspectrum_byte paper )
+{
+  int i;
+  int pixel_x = machine_current->timex ? x << 4 : x << 3;
+  int pixel_y = machine_current->timex ? y << 1 : y;
+  int repeat_x = machine_current->timex ? 2 : 1;
+  int repeat_y = machine_current->timex ? 2 : 1;
+
+  for( i = 0; i < 8; i++ ) {
+    int colour = ( data & ( 0x80 >> i ) ) ? ink : paper;
+    int rx, ry;
+    for( ry = 0; ry < repeat_y; ry++ )
+      for( rx = 0; rx < repeat_x; rx++ )
+        null_display_pixel( pixel_x + repeat_x * i + rx,
+                             pixel_y + ry, colour );
+  }
+}
+
+static void
+null_display_plot16( int x, int y, libspectrum_word data,
+                     libspectrum_byte ink, libspectrum_byte paper )
+{
+  int row, i;
+  int pixel_x = x << 4;
+  int pixel_y = y << 1;
+
+  for( row = 0; row < 2; row++ )
+    for( i = 0; i < 16; i++ )
+      null_display_pixel( pixel_x + i, pixel_y + row,
+                          ( data & ( 0x8000 >> i ) ) ? ink : paper );
+}
 
 scaler_type
 menu_get_scaler( scaler_available_fn selector )
@@ -214,6 +268,10 @@ uidisplay_area( int x, int y, int w, int h )
 int
 uidisplay_end( void )
 {
+  free( null_display_pixels );
+  null_display_pixels = NULL;
+  null_display_info = (fusex_display_info_t){ 0 };
+  null_display_frame = (fusex_display_frame_t){ 0 };
   /* No error */
   return 0;
 }
@@ -234,7 +292,23 @@ uidisplay_hotswap_gfx_mode( void )
 int
 uidisplay_init( int width, int height )
 {
-  /* No error */
+  null_display_pixels = calloc( (size_t)width * (size_t)height,
+                                sizeof( *null_display_pixels ) );
+  if( !null_display_pixels ) return 1;
+
+  null_display_info = (fusex_display_info_t){
+    .width = width,
+    .height = height,
+    .border_width = width == DISPLAY_ASPECT_WIDTH
+      ? DISPLAY_BORDER_ASPECT_WIDTH : DISPLAY_BORDER_WIDTH,
+    .border_height = height == DISPLAY_SCREEN_HEIGHT
+      ? DISPLAY_BORDER_HEIGHT : DISPLAY_BORDER_HEIGHT * 2,
+  };
+  null_display_generation++;
+  null_display_frame = (fusex_display_frame_t){
+    .pixels = null_display_pixels,
+    .generation = null_display_generation,
+  };
   return 0;
 }
 
@@ -242,20 +316,40 @@ void
 uidisplay_plot16( int x, int y, libspectrum_word data,
     libspectrum_byte ink, libspectrum_byte paper )
 {
-  /* Do nothing */
+  null_display_plot16( x, y, data, ink, paper );
 }
 
 void
 uidisplay_plot8( int x, int y, libspectrum_byte data,
     libspectrum_byte ink, libspectrum_byte paper )
 {
-  /* Do nothing */
+  null_display_plot8( x, y, data, ink, paper );
 }
 
 void
 uidisplay_putpixel( int x, int y, int colour )
 {
-  /* Do nothing */
+  int pixel_x = machine_current->timex ? x << 1 : x;
+  int pixel_y = machine_current->timex ? y << 1 : y;
+  int repeat_x = machine_current->timex ? 2 : 1;
+  int repeat_y = machine_current->timex ? 2 : 1;
+  int rx, ry;
+
+  for( ry = 0; ry < repeat_y; ry++ )
+    for( rx = 0; rx < repeat_x; rx++ )
+      null_display_pixel( pixel_x + rx, pixel_y + ry, colour );
+}
+
+const fusex_display_info_t *
+null_ui_display_info( void )
+{
+  return &null_display_info;
+}
+
+const fusex_display_frame_t *
+null_ui_display_frame( void )
+{
+  return &null_display_frame;
 }
 
 int
