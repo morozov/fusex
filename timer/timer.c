@@ -63,6 +63,10 @@ static const int TEN_MS = 10;
 
 int timer_event;
 
+static void timer_realtime_schedule( libspectrum_dword last_tstates );
+
+static timer_pacer active_pacer = timer_realtime_schedule;
+
 static void timer_frame( libspectrum_dword last_tstates, int event GCC_UNUSED,
 			 void *user_data GCC_UNUSED );
 
@@ -128,6 +132,12 @@ static void
 timer_end( void )
 {
   event_remove_type( timer_event );
+}
+
+void
+timer_set_pacer( timer_pacer pacer )
+{
+  active_pacer = pacer;
 }
 
 void
@@ -207,9 +217,6 @@ static void
 timer_frame( libspectrum_dword last_tstates, int event GCC_UNUSED,
 	     void *user_data GCC_UNUSED )
 {
-  double current_time, difference;
-  long tstates;
-
   if( sound_enabled && settings_current.sound ) {
     timer_frame_callback_sound( last_tstates );
     return;
@@ -225,40 +232,46 @@ timer_frame( libspectrum_dword last_tstates, int event GCC_UNUSED,
     event_add( next_check_time, timer_event );
 
   } else {
+    active_pacer( last_tstates );
+  }
+}
 
-    float speed = ( settings_current.emulation_speed < 1 ?
-                    1.0                                  :
-                    settings_current.emulation_speed ) / 100.0;
+static void
+timer_realtime_schedule( libspectrum_dword last_tstates )
+{
+  double current_time, difference;
+  long tstates;
+  float speed = ( settings_current.emulation_speed < 1 ?
+                  1.0                                  :
+                  settings_current.emulation_speed ) / 100.0;
 
-    while( 1 ) {
-
-      current_time = timer_get_time(); if( current_time < 0 ) return;
-      difference = current_time - start_time;
-
-      /* Sleep while we are still 10ms ahead */
-      if( difference < 0 ) {
-        timer_sleep( TEN_MS );
-      } else {
-	break;
-      }
-
-    }
+  while( 1 ) {
 
     current_time = timer_get_time(); if( current_time < 0 ) return;
     difference = current_time - start_time;
 
-    tstates = ( ( difference + TEN_MS / 1000.0 ) *
-		machine_current->timings.processor_speed
-		) * speed + 0.5;
-
-    /* If speed is very large, tstates can also get very large; cap it to
-       avoid any potential overflows */
-    if( tstates > 1 << 30 ) {
-      tstates = 1 << 30;
+    /* Sleep while we are still 10ms ahead */
+    if( difference < 0 ) {
+      timer_sleep( TEN_MS );
+    } else {
+      break;
     }
-
-    event_add( last_tstates + tstates, timer_event );
-
-    start_time = current_time + TEN_MS / 1000.0;
   }
+
+  current_time = timer_get_time(); if( current_time < 0 ) return;
+  difference = current_time - start_time;
+
+  tstates = ( ( difference + TEN_MS / 1000.0 ) *
+              machine_current->timings.processor_speed
+              ) * speed + 0.5;
+
+  /* If speed is very large, tstates can also get very large; cap it to
+     avoid any potential overflows */
+  if( tstates > 1 << 30 ) {
+    tstates = 1 << 30;
+  }
+
+  event_add( last_tstates + tstates, timer_event );
+
+  start_time = current_time + TEN_MS / 1000.0;
 }
