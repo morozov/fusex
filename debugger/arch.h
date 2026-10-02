@@ -24,8 +24,4 @@
     "<architecture>z80</architecture>"\
     "</target>"
 
-#define EXTRA_NUM 25
-#define EXTRA_REG 16
-#define EXTRA_SIZE 4
-
 #endif /* ARCH_H */
