@@ -110,6 +110,10 @@ enum gdb_register_t {
     GDB_REGISTER_BC_,
     GDB_REGISTER_DE_,
     GDB_REGISTER_HL_,
+    GDB_REGISTER_IR,
+    GDB_REGISTER_IFF1,
+    GDB_REGISTER_IFF2,
+    GDB_REGISTER_IM,
     GDB_REGISTER_CLOCKL,
     GDB_REGISTER_CLOCKH,
     GDB_REGISTER_COUNT
@@ -399,6 +403,14 @@ static int set_register_value(int reg, libspectrum_word value)
         case GDB_REGISTER_BC_: BC_ = value; break;
         case GDB_REGISTER_DE_: DE_ = value; break;
         case GDB_REGISTER_HL_: HL_ = value; break;
+        case GDB_REGISTER_IR: /* I in the high byte, R in the low byte (bit 7 in r7) */
+            I = (value >> 8) & 0xff;
+            R = value & 0x7f;
+            R7 = value & 0x80;
+            break;
+        case GDB_REGISTER_IFF1: IFF1 = value & 0xff; break;
+        case GDB_REGISTER_IFF2: IFF2 = value & 0xff; break;
+        case GDB_REGISTER_IM: IM = value & 0xff; break;
         case GDB_REGISTER_CLOCKL: CLOCKL = value; break;
         case GDB_REGISTER_CLOCKH: CLOCKH = value; break;
         default: return 1;
@@ -422,6 +434,10 @@ static int get_register_value(int reg, libspectrum_word* result)
         case GDB_REGISTER_BC_: *result = BC_; break;
         case GDB_REGISTER_DE_: *result = DE_; break;
         case GDB_REGISTER_HL_: *result = HL_; break;
+        case GDB_REGISTER_IR: *result = IR; break;
+        case GDB_REGISTER_IFF1: *result = IFF1; break;
+        case GDB_REGISTER_IFF2: *result = IFF2; break;
+        case GDB_REGISTER_IM: *result = IM; break;
         case GDB_REGISTER_CLOCKL: *result = CLOCKL; break;
         case GDB_REGISTER_CLOCKH: *result = CLOCKH; break;
         default: return 1;
