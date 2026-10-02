@@ -26,10 +26,14 @@
 
 #include "libspectrum.h"
 
+typedef void (*timer_pacer)( libspectrum_dword last_tstates );
+
 int timer_estimate_reset( void );
 int timer_estimate_speed( void );
 
 void timer_register_startup( void );
+
+void timer_set_pacer( timer_pacer pacer );
 
 extern float current_speed;
 extern int timer_event;

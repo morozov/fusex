@@ -33,6 +33,7 @@
 #include "keyboard.h"
 #include "machine.h"
 #include "spectrum.h"
+#include "timer/timer.h"
 #include "ui/scaler/scaler.h"
 #include "ui/ui.h"
 #include "ui/ui_internals.h"
@@ -49,6 +50,13 @@ static uint8_t *null_display_pixels;
 static fusex_display_info_t null_display_info;
 static fusex_display_frame_t null_display_frame;
 static uint64_t null_display_generation;
+
+static void
+null_ui_schedule_timer( libspectrum_dword last_tstates )
+{
+  event_add( last_tstates + machine_current->timings.tstates_per_frame,
+             timer_event );
+}
 
 static void
 null_display_pixel( int x, int y, int colour )
@@ -200,6 +208,8 @@ ui_get_save_filename( const char *title )
 int
 ui_init( int *argc, char ***argv )
 {
+  timer_set_pacer( null_ui_schedule_timer );
+
   /* No error */
   return 0;
 }
