@@ -30,6 +30,8 @@
 
 #include "compat.h"
 
+#define FUSE_APP_ID "org.speccytools.FuseX"
+
 extern const char *fuse_progname;	/* argv[0] */
 
 extern int fuse_exiting;		/* Shall we exit now? */

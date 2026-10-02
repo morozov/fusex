@@ -31,12 +31,16 @@
 
 #include "libspectrum.h"
 
+#ifdef ENABLE_AUTOMATION
+#include "automation/automation.h"
+#endif
 #include "fuse.h"
 #include "peripherals/if1.h"
 #include "peripherals/kempmouse.h"
 #include "settings.h"
 #include "tape.h"
 #include "ui/ui.h"
+#include "ui/ui_internals.h"
 #include "ui/uidisplay.h"
 #include "ui/uimedia.h"
 #include "ui/widget/widget.h"
@@ -53,6 +57,9 @@ static uidisplay_hotswap_reason next_hotswap_reason =
 
 static int
 print_error_to_stderr( ui_error_level severity, const char *message );
+static int
+ui_verror_internal( ui_error_level severity, const char *format, va_list ap,
+                    int console_only );
 
 void
 uidisplay_set_next_hotswap_reason( uidisplay_hotswap_reason reason )
@@ -83,7 +90,27 @@ ui_error( ui_error_level severity, const char *format, ... )
 }
 
 int
+ui_error_console( ui_error_level severity, const char *format, ... )
+{
+  int error;
+  va_list ap;
+
+  va_start( ap, format );
+  error = ui_verror_internal( severity, format, ap, 1 );
+  va_end( ap );
+
+  return error;
+}
+
+int
 ui_verror( ui_error_level severity, const char *format, va_list ap )
+{
+  return ui_verror_internal( severity, format, ap, 0 );
+}
+
+static int
+ui_verror_internal( ui_error_level severity, const char *format, va_list ap,
+                    int console_only )
 {
   char message[ MESSAGE_MAX_LENGTH ];
 
@@ -101,8 +128,14 @@ ui_verror( ui_error_level severity, const char *format, va_list ap )
 
   print_error_to_stderr( severity, message );
 
-  /* Do any UI-specific bits as well */
-  ui_error_specific( severity, message );
+  if( console_only ) {
+#ifdef ENABLE_AUTOMATION
+    automation_diagnostic( severity, message );
+#endif
+  } else {
+    /* Do any UI-specific bits as well */
+    ui_error_specific( severity, message );
+  }
 
   return 0;
 }
@@ -120,6 +153,22 @@ ui_confirm_save( const char *format, ... )
   confirm = ui_confirm_save_specific( message );
 
   va_end( ap );
+
+  return confirm;
+}
+
+int
+ui_query( const char *format, ... )
+{
+  va_list ap;
+  char message[ MESSAGE_MAX_LENGTH ];
+  int confirm;
+
+  va_start( ap, format );
+  vsnprintf( message, MESSAGE_MAX_LENGTH, format, ap );
+  va_end( ap );
+
+  confirm = ui_query_message( message );
 
   return confirm;
 }
@@ -259,6 +308,11 @@ static const struct menu_item_entries menu_item_lookup[] = {
   { UI_MENU_ITEM_MACHINE_DEBUGGER, "/Machine/Debugger..." },
 
   { UI_MENU_ITEM_MACHINE_DEBUG_LOG, "/Machine/Debug Log..." },
+
+#ifdef USE_WIDGET
+  { UI_MENU_ITEM_MACHINE_DISCIPLE_MAGIC_BUTTON,
+    "/Machine/DISCiPLE Magic Button" },
+#endif
 
   { UI_MENU_ITEM_MACHINE_MULTIFACE, "/Machine/Multiface Red Button" },
 

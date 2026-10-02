@@ -334,6 +334,8 @@ ui_init( int *argc, char ***argv )
   GtkWidget *box, *menu;
   GtkSettings *settings;
 
+  g_set_prgname( FUSE_APP_ID );
+
   gtk_init(argc,argv);
 
   gtkui_follow_desktop_color_scheme();
@@ -355,8 +357,7 @@ ui_init( int *argc, char ***argv )
                                            FALSE );
 
 #ifdef FUSE_ICON_AVAILABLE
-  gtk_window_set_icon_name( GTK_WINDOW( gtkui_window ),
-                            "org.speccytools.FuseX" );
+  gtk_window_set_icon_name( GTK_WINDOW( gtkui_window ), FUSE_APP_ID );
 #endif
 
   settings = gtk_widget_get_settings( GTK_WIDGET( gtkui_window ) );
@@ -1017,7 +1018,7 @@ MENU_CALLBACK( menu_help_about )
                          "comments", "ZX Spectrum emulator",
                          "copyright", FUSE_COPYRIGHT,
 #ifdef FUSE_ICON_AVAILABLE
-                         "logo-icon-name", "org.speccytools.FuseX",
+                         "logo-icon-name", FUSE_APP_ID,
 #else
                          "logo-icon-name", NULL,
 #endif

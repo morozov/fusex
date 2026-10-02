@@ -33,6 +33,7 @@
 #include "display.h"
 #include "fuse.h"
 #include "ui/ui.h"
+#include "ui/ui_internals.h"
 #include "ui/uidisplay.h"
 #include "pokefinder/pokefinder.h"
 #include "pokefinder/pokemem.h"
@@ -117,7 +118,7 @@ ui_confirm_save_specific( const char *message )
 }
 
 int
-ui_query( const char *message )
+ui_query_message( const char *message )
 {
   return [[Emulator instance] confirm:@(message)];
 }

@@ -42,6 +42,9 @@
 #include <libxml/encoding.h>
 #endif
 
+#ifdef ENABLE_AUTOMATION
+#include "automation/automation.h"
+#endif
 #include "debugger/debugger.h"
 #include "debugger/gdbserver.h"
 #include "display.h"
@@ -98,7 +101,9 @@
 #include "ui/scaler/scaler.h"
 #include "ui/ui.h"
 #include "ui/uimedia.h"
+#ifdef UI_NULL
 #include "unittests/unittests.h"
+#endif
 #include "utils.h"
 
 #include "z80/z80.h"
@@ -329,6 +334,15 @@ int fuse_init(int argc, char **argv)
 #endif
 
   if( settings_init( &first_arg, argc, argv ) ) return 1;
+#ifndef UI_NULL
+  if( settings_current.unittests ) {
+    fprintf( stderr, "--unittests is available only with the null UI\n" );
+    return 1;
+  }
+#endif
+#ifdef ENABLE_AUTOMATION
+  if( automation_active() ) settings_current.autosave_settings = 0;
+#endif
 
   if( settings_current.show_version ) {
     fuse_show_version();
@@ -497,6 +511,21 @@ static void fuse_show_help( void )
 {
   printf( "\n" );
   fuse_show_version();
+#ifdef ENABLE_AUTOMATION
+  printf(
+   "\nDevelopment automation options:\n\n"
+   "--automation-output <directory>       Write one-shot result artifacts here.\n"
+   "--automation-frames <count>           Stop after completed machine frames.\n"
+   "--automation-max-frames <count>       Deadline for a bounded run.\n"
+   "--automation-until-rzx-end            Stop when RZX playback ends.\n"
+   "--automation-success-pc <address>     Stop successfully at this PC.\n"
+   "--automation-failure-pc <address>     Stop unsuccessfully at this PC.\n"
+   "--automation-failure-pc-ignore <n>    Ignore the first n failure hits.\n"
+   "--automation-capture-screen           Write the final screen as PNG.\n"
+   "--automation-capture-audio            Capture frame-aligned PCM as WAV.\n"
+   "--automation-until-disk-idle          Stop after disk motor activity becomes idle.\n"
+   "--automation-disk-idle-frames <n>     Required motor-off settling frames (default 50).\n" );
+#endif
   printf(
    "\nAvailable command-line options:\n\n"
    "Boolean options (use `--no-<option>' to turn off):\n\n"
@@ -667,7 +696,7 @@ parse_nonoption_args( int argc, char **argv, int first_arg,
     }
 
     type = file.type;
-    class = file.class;
+    class = file.file_class;
 
     switch( class ) {
 
@@ -950,11 +979,22 @@ do_start_files( start_files_t *start_files )
   /* Input recordings */
 
   if( start_files->playback.filename ) {
+    error = utils_file_read( &start_files->playback );
+    if( error ) return error;
+#ifdef ENABLE_AUTOMATION
+    if( automation_active() ) automation_record_rzx( &start_files->playback );
+#endif
+
     check_snapshot = start_files->snapshot.filename ? 0 : 1;
     error = rzx_start_playback_from_buffer_with_snapshot_check(
       start_files->playback.buffer, start_files->playback.length,
       check_snapshot );
-    if( error ) return error;
+    if( error ) {
+#ifdef ENABLE_AUTOMATION
+      if( automation_active() ) return 0;
+#endif
+      return error;
+    }
   }
 
   if( start_files->recording ) {

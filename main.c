@@ -36,6 +36,9 @@
 #include <SDL.h>		/* Needed on MacOS X and Windows */
 #endif /* #if defined UI_SDL || defined UI_SDL2 || (defined USE_JOYSTICK && (defined UI_X || defined UI_GTK) ) */
 
+#ifdef ENABLE_AUTOMATION
+#include "automation/automation.h"
+#endif
 #include "debugger/debugger.h"
 #include "fuse.h"
 #include "settings.h"
@@ -76,13 +79,30 @@ main( int argc, char **argv )
   if( settings_current.unittests ) {
     r = unittests_run();
   } else {
+#ifdef ENABLE_AUTOMATION
+    if( automation_active() ) automation_arm( spectrum_get_frame_count() );
+#endif
     while( !fuse_exiting ) {
       spectrum_do_frame();
+#ifdef ENABLE_AUTOMATION
+      if( automation_active() &&
+          automation_frame_limit_reached( spectrum_get_frame_count() ) )
+        fuse_exiting = 1;
+#endif
     }
     r = debugger_get_exit_code();
+#ifdef ENABLE_AUTOMATION
+    if( automation_active() ) r = automation_exit_status();
+#endif
   }
 
+#ifdef ENABLE_AUTOMATION
+  if( automation_active() && automation_write_result() ) r = 1;
+#endif
   fuse_end();
+#ifdef ENABLE_AUTOMATION
+  if( automation_active() ) automation_end();
+#endif
 
   return r;
 }

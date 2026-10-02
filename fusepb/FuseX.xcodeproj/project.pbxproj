@@ -263,6 +263,7 @@
 		B6DCBBDC114FA0E700DC9A11 /* garray.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB82114FA0E700DC9A11 /* garray.c */; };
 		B6DCBBDD114FA0E700DC9A11 /* ghash.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB83114FA0E700DC9A11 /* ghash.c */; };
 		B6DCBBDE114FA0E700DC9A11 /* gslist.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB84114FA0E700DC9A11 /* gslist.c */; };
+		ECA40B2BD3B71B2F4DAB61DA /* glock.c in Sources */ = {isa = PBXBuildFile; fileRef = E743506573CEA517B7E8424A /* glock.c */; };
 		B6DCBBE0114FA0E700DC9A11 /* plusd.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB86114FA0E700DC9A11 /* plusd.c */; };
 		B6DCBBE2114FA0E700DC9A11 /* rzx.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB88114FA0E700DC9A11 /* rzx.c */; };
 		B6DCBBE3114FA0E700DC9A11 /* sna.c in Sources */ = {isa = PBXBuildFile; fileRef = B6DCBB89114FA0E700DC9A11 /* sna.c */; };
@@ -377,6 +378,24 @@
 		FEFB7C20301EB52200F1CFEC /* xfs_https_compat.c in Sources */ = {isa = PBXBuildFile; fileRef = FEFB7C1F301EB52200F1CFEC /* xfs_https_compat.c */; };
 		FEFB7C22301EB52E00F1CFEC /* xfs_compat.c in Sources */ = {isa = PBXBuildFile; fileRef = FEFB7C21301EB52E00F1CFEC /* xfs_compat.c */; };
 		FEFB7C243023F19700F1CFEC /* scalers32.c in Sources */ = {isa = PBXBuildFile; fileRef = FEFB7C233023F19700F1CFEC /* scalers32.c */; };
+		D19300010000000000000002 /* display_border.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000001 /* display_border.c */; };
+		D19300010000000000000004 /* display_dirty.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000003 /* display_dirty.c */; };
+		D19300010000000000000006 /* display_render.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000005 /* display_render.c */; };
+		D19300010000000000000008 /* loader_detector.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000007 /* loader_detector.c */; };
+		D19300010000000000000010 /* rzx_recording.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000009 /* rzx_recording.c */; };
+		D19300010000000000000012 /* tape_block.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000011 /* tape_block.c */; };
+		D19300010000000000000014 /* tape_record.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000013 /* tape_record.c */; };
+		D19300010000000000000016 /* tape_traps.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000015 /* tape_traps.c */; };
+		D19300010000000000000018 /* ay_engine.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000017 /* ay_engine.c */; };
+		D19300010000000000000020 /* dc_filter.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000019 /* dc_filter.c */; };
+		D19300010000000000000022 /* output_mixer.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000021 /* output_mixer.c */; };
+		D19300010000000000000024 /* source_synths.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000023 /* source_synths.c */; };
+		D19300010000000000000026 /* tv_filter.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000025 /* tv_filter.c */; };
+		D19300010000000000000028 /* helpers.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000027 /* helpers.c */; };
+		D19300010000000000000030 /* loader.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000029 /* loader.c */; };
+		D19300010000000000000032 /* tape.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000031 /* tape.c */; };
+		D19300010000000000000034 /* monotonic.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000033 /* monotonic.c */; };
+		D19300010000000000000036 /* file.c in Sources */ = {isa = PBXBuildFile; fileRef = D19300010000000000000035 /* file.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -775,6 +794,7 @@
 		B6DCBB82114FA0E700DC9A11 /* garray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = garray.c; sourceTree = "<group>"; };
 		B6DCBB83114FA0E700DC9A11 /* ghash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ghash.c; sourceTree = "<group>"; };
 		B6DCBB84114FA0E700DC9A11 /* gslist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = gslist.c; sourceTree = "<group>"; };
+		E743506573CEA517B7E8424A /* glock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = glock.c; sourceTree = "<group>"; };
 		B6DCBB86114FA0E700DC9A11 /* plusd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = plusd.c; sourceTree = "<group>"; };
 		B6DCBB88114FA0E700DC9A11 /* rzx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rzx.c; sourceTree = "<group>"; };
 		B6DCBB89114FA0E700DC9A11 /* sna.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sna.c; sourceTree = "<group>"; };
@@ -1017,6 +1037,24 @@
 		FEFB7C1F301EB52200F1CFEC /* xfs_https_compat.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xfs_https_compat.c; sourceTree = "<group>"; };
 		FEFB7C21301EB52E00F1CFEC /* xfs_compat.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xfs_compat.c; sourceTree = "<group>"; };
 		FEFB7C233023F19700F1CFEC /* scalers32.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = scalers32.c; path = scaler/scalers32.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000001 /* display_border.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = display_border.c; path = ../display_border.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000003 /* display_dirty.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = display_dirty.c; path = ../display_dirty.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000005 /* display_render.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = display_render.c; path = ../display_render.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000007 /* loader_detector.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = loader_detector.c; path = ../loader_detector.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000009 /* rzx_recording.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = rzx_recording.c; path = ../rzx_recording.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000011 /* tape_block.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tape_block.c; path = ../tape_block.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000013 /* tape_record.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tape_record.c; path = ../tape_record.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000015 /* tape_traps.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tape_traps.c; path = ../tape_traps.c; sourceTree = SOURCE_ROOT; };
+		D19300010000000000000017 /* ay_engine.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ay_engine.c; path = sound/ay_engine.c; sourceTree = "<group>"; };
+		D19300010000000000000019 /* dc_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dc_filter.c; path = sound/dc_filter.c; sourceTree = "<group>"; };
+		D19300010000000000000021 /* output_mixer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = output_mixer.c; path = sound/output_mixer.c; sourceTree = "<group>"; };
+		D19300010000000000000023 /* source_synths.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = source_synths.c; path = sound/source_synths.c; sourceTree = "<group>"; };
+		D19300010000000000000025 /* tv_filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tv_filter.c; path = sound/tv_filter.c; sourceTree = "<group>"; };
+		D19300010000000000000027 /* helpers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = helpers.c; path = helpers.c; sourceTree = "<group>"; };
+		D19300010000000000000029 /* loader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = loader.c; path = loader.c; sourceTree = "<group>"; };
+		D19300010000000000000031 /* tape.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tape.c; path = tape.c; sourceTree = "<group>"; };
+		D19300010000000000000033 /* monotonic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monotonic.c; path = monotonic.c; sourceTree = "<group>"; };
+		D19300010000000000000035 /* file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = file.c; path = file.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1205,6 +1243,7 @@
 				B63225EB0C66BA1300BB081B /* osname.c */,
 				B69BE5321660DF5300C5D0CE /* socket.c */,
 				B64BD10B0FF6EE4E000B82AE /* timer.c */,
+				D19300010000000000000033 /* monotonic.c */,
 			);
 			path = unix;
 			sourceTree = "<group>";
@@ -1376,6 +1415,11 @@
 				D19200010000000000000002 /* speaker_filter.h */,
 				D19200010000000000000003 /* ula_filter.c */,
 				D19200010000000000000004 /* ula_filter.h */,
+				D19300010000000000000017 /* ay_engine.c */,
+				D19300010000000000000019 /* dc_filter.c */,
+				D19300010000000000000021 /* output_mixer.c */,
+				D19300010000000000000023 /* source_synths.c */,
+				D19300010000000000000025 /* tv_filter.c */,
 			);
 			name = sound;
 			sourceTree = "<group>";
@@ -1620,6 +1664,7 @@
 				B69D8D4B1D6B34490031BAFC /* zip.c */,
 				B69D8D4C1D6B34490031BAFC /* zip.h */,
 				B6DCBBBA114FA0E700DC9A11 /* zxs.c */,
+				D19300010000000000000035 /* file.c */,
 			);
 			name = libspectrum;
 			path = 3rdparty/libspectrum;
@@ -1631,6 +1676,7 @@
 				B6DCBB82114FA0E700DC9A11 /* garray.c */,
 				B6DCBB83114FA0E700DC9A11 /* ghash.c */,
 				B6DCBB84114FA0E700DC9A11 /* gslist.c */,
+				E743506573CEA517B7E8424A /* glock.c */,
 			);
 			path = myglib;
 			sourceTree = "<group>";
@@ -1653,6 +1699,9 @@
 			children = (
 				B6E0CBA21D9E809000426949 /* unittests.c */,
 				B6E0CBA31D9E809000426949 /* unittests.h */,
+				D19300010000000000000027 /* helpers.c */,
+				D19300010000000000000029 /* loader.c */,
+				D19300010000000000000031 /* tape.c */,
 			);
 			path = unittests;
 			sourceTree = "<group>";
@@ -1832,6 +1881,14 @@
 				B6CE3A140CD21838005ACDC8 /* bitmap.h */,
 				B6871C9D04AF7BEF00C24D83 /* compat.h */,
 				F55985D3038922B901A804BA /* display.c */,
+				D19300010000000000000001 /* display_border.c */,
+				D19300010000000000000003 /* display_dirty.c */,
+				D19300010000000000000005 /* display_render.c */,
+				D19300010000000000000007 /* loader_detector.c */,
+				D19300010000000000000009 /* rzx_recording.c */,
+				D19300010000000000000011 /* tape_block.c */,
+				D19300010000000000000013 /* tape_record.c */,
+				D19300010000000000000015 /* tape_traps.c */,
 				F55985D4038922B901A804BA /* display.h */,
 				F55985D5038922B901A804BA /* event.c */,
 				F55985D6038922B901A804BA /* event.h */,
@@ -2408,6 +2465,7 @@
 				B6DCBBDC114FA0E700DC9A11 /* garray.c in Sources */,
 				B6DCBBDD114FA0E700DC9A11 /* ghash.c in Sources */,
 				B6DCBBDE114FA0E700DC9A11 /* gslist.c in Sources */,
+				ECA40B2BD3B71B2F4DAB61DA /* glock.c in Sources */,
 				B6DCBBE0114FA0E700DC9A11 /* plusd.c in Sources */,
 				B6DCBBE2114FA0E700DC9A11 /* rzx.c in Sources */,
 				B6DCBBE3114FA0E700DC9A11 /* sna.c in Sources */,
@@ -2468,6 +2526,24 @@
 				B69D8D4D1D6B34490031BAFC /* zip.c in Sources */,
 				B69BE5451660E04000C5D0CE /* spectranet.c in Sources */,
 				B6B274061672AC8C00FC209B /* paths.c in Sources */,
+				D19300010000000000000002 /* display_border.c in Sources */,
+				D19300010000000000000004 /* display_dirty.c in Sources */,
+				D19300010000000000000006 /* display_render.c in Sources */,
+				D19300010000000000000008 /* loader_detector.c in Sources */,
+				D19300010000000000000010 /* rzx_recording.c in Sources */,
+				D19300010000000000000012 /* tape_block.c in Sources */,
+				D19300010000000000000014 /* tape_record.c in Sources */,
+				D19300010000000000000016 /* tape_traps.c in Sources */,
+				D19300010000000000000018 /* ay_engine.c in Sources */,
+				D19300010000000000000020 /* dc_filter.c in Sources */,
+				D19300010000000000000022 /* output_mixer.c in Sources */,
+				D19300010000000000000024 /* source_synths.c in Sources */,
+				D19300010000000000000026 /* tv_filter.c in Sources */,
+				D19300010000000000000028 /* helpers.c in Sources */,
+				D19300010000000000000030 /* loader.c in Sources */,
+				D19300010000000000000032 /* tape.c in Sources */,
+				D19300010000000000000034 /* monotonic.c in Sources */,
+				D19300010000000000000036 /* file.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2553,7 +2629,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.9.2-fusex-0.1";
+				MARKETING_VERSION = "1.10.0-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (
@@ -2626,7 +2702,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.9.2-fusex-0.1";
+				MARKETING_VERSION = "1.10.0-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (
@@ -2698,7 +2774,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = .;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = "1.9.2-fusex-0.1";
+				MARKETING_VERSION = "1.10.0-fusex-0.1";
 				OTHER_CFLAGS = "";
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_LDFLAGS = (

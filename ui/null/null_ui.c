@@ -23,13 +23,19 @@
 
 #include "config.h"
 
+#ifdef ENABLE_AUTOMATION
+#include "automation/automation.h"
+#endif
 #include <stdint.h>
 #include <stdlib.h>
 
 #include "display.h"
 #include "keyboard.h"
 #include "machine.h"
+#include "spectrum.h"
+#include "ui/scaler/scaler.h"
 #include "ui/ui.h"
+#include "ui/ui_internals.h"
 
 #include "fusex_display.h"
 
@@ -95,7 +101,7 @@ menu_get_scaler( scaler_available_fn selector )
 
 int
 menu_select_roms_with_title( const char *title, size_t start, size_t count,
-    int is_peripheral )
+                             int is_peripheral )
 {
   /* No error */
   return 0;
@@ -157,7 +163,9 @@ ui_end( void )
 int
 ui_error_specific( ui_error_level severity, const char *message )
 {
-  /* No error */
+#ifdef ENABLE_AUTOMATION
+  automation_diagnostic( severity, message );
+#endif
   return 0;
 }
 
@@ -168,7 +176,7 @@ ui_event( void )
   return 0;
 }
 
-char*
+char *
 ui_get_open_filename( const char *title )
 {
   /* No filename */
@@ -182,7 +190,7 @@ ui_get_rollback_point( GSList *points )
   return -1;
 }
 
-char*
+char *
 ui_get_save_filename( const char *title )
 {
   /* No filename */
@@ -224,7 +232,7 @@ ui_pokemem_selector( const char *filename )
 }
 
 int
-ui_query( const char *message )
+ui_query_message( const char *message )
 {
   /* Query confirmed */
   return 1;
@@ -233,6 +241,13 @@ ui_query( const char *message )
 int
 ui_statusbar_update( ui_statusbar_item item, ui_statusbar_state state )
 {
+#ifdef ENABLE_AUTOMATION
+  if( automation_active() && item == UI_STATUSBAR_ITEM_DISK &&
+      ( state == UI_STATUSBAR_STATE_ACTIVE ||
+        state == UI_STATUSBAR_STATE_INACTIVE ) )
+    automation_disk_motor_changed( state == UI_STATUSBAR_STATE_ACTIVE,
+                                   spectrum_get_frame_count() );
+#endif
   /* No error */
   return 0;
 }
@@ -246,7 +261,7 @@ ui_statusbar_update_speed( float speed )
 
 int
 ui_tape_browser_update( ui_tape_browser_update_type change,
-    libspectrum_tape_block *block )
+                        libspectrum_tape_block *block )
 {
   /* No error */
   return 0;
@@ -279,7 +294,12 @@ uidisplay_end( void )
 void
 uidisplay_frame_end( void )
 {
-  /* Do nothing */
+#ifdef ENABLE_AUTOMATION
+  if( automation_capture_screen_enabled() )
+    automation_capture_screen( null_display_pixels,
+                               null_display_info.width,
+                               null_display_info.height );
+#endif
 }
 
 int
@@ -292,6 +312,13 @@ uidisplay_hotswap_gfx_mode( void )
 int
 uidisplay_init( int width, int height )
 {
+#ifdef ENABLE_AUTOMATION
+  if( automation_capture_screen_enabled() ) {
+    for( scaler_type scaler = 0; scaler < SCALER_NUM; scaler++ )
+      scaler_register( scaler );
+  }
+#endif
+
   null_display_pixels = calloc( (size_t)width * (size_t)height,
                                 sizeof( *null_display_pixels ) );
   if( !null_display_pixels ) return 1;
@@ -314,14 +341,14 @@ uidisplay_init( int width, int height )
 
 void
 uidisplay_plot16( int x, int y, libspectrum_word data,
-    libspectrum_byte ink, libspectrum_byte paper )
+                  libspectrum_byte ink, libspectrum_byte paper )
 {
   null_display_plot16( x, y, data, ink, paper );
 }
 
 void
 uidisplay_plot8( int x, int y, libspectrum_byte data,
-    libspectrum_byte ink, libspectrum_byte paper )
+                 libspectrum_byte ink, libspectrum_byte paper )
 {
   null_display_plot8( x, y, data, ink, paper );
 }
