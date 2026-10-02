@@ -38,7 +38,7 @@ sound_lowlevel_init( const char *device, int *freqptr, int *stereoptr )
     return 0;
   }
 #endif
-  return 1;
+  return 0;
 }
 
 void
