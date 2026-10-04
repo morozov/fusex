@@ -77,6 +77,7 @@ static trapped_action_t scheduled_action = NULL;
 static const void* scheduled_action_data = NULL;
 static void* scheduled_action_response = NULL;
 static uint8_t scheduled_action_response_delivered = 0;
+static int scheduled_action_running = 0;
 
 static pthread_cond_t trapped_cond;
 static pthread_cond_t response_cond;
@@ -1495,6 +1496,9 @@ int gdbserver_activate()
 
 int gdbserver_activate_with_reason(int trap_reason)
 {
+    if (scheduled_action_running)
+        return 0;
+
     if (gdbserver_client_socket != -1 && gdbserver_debugging_enabled)
         gdbserver_send_stop_reply(trap_reason);
 
@@ -1525,7 +1529,9 @@ int gdbserver_activate_with_reason(int trap_reason)
 
         if (scheduled_action != NULL)
         {
+            scheduled_action_running = 1;
             halt = scheduled_action(scheduled_action_data, scheduled_action_response);
+            scheduled_action_running = 0;
             scheduled_action = NULL;
             scheduled_action_response_delivered = 1;
             
