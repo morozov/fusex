@@ -14,8 +14,10 @@ extern const struct remote_command_entry_t remote_commands[];
 
 /* Dispatch a monitor command that does not match any entry in
    remote_commands[] to the Fuse internal debugger (debugger_command_evaluate).
-   Returns 0 once the command has been evaluated, 1 if it was empty or the
-   emulator was not in a state where it could be evaluated. */
+   Any error text emitted via ui_error() during evaluation is sent to the
+   client via gdbserver_send_remote_console_output(). Returns 0 on success, 1
+   if the command failed to evaluate, was empty, or the emulator was not in a
+   state where it could be evaluated. */
 uint8_t remote_command_passthrough(const char *command);
 
 #endif

@@ -55,6 +55,16 @@ static size_t frames_since_last_message = 0;
 static uidisplay_hotswap_reason next_hotswap_reason =
   UIDISPLAY_HOTSWAP_REASON_NONE;
 
+/* When non-NULL, ui_verror() passes each formatted message, terminated by a
+   newline, to this function instead of dispatching to print_error_to_stderr() /
+   ui_error_specific(). See ui_error_capture_begin() in ui/ui.h. Not
+   thread-safe: callers must serialize their use. */
+static ui_error_capture_fn ui_error_capture_callback = NULL;
+static void *ui_error_capture_user = NULL;
+/* Messages diverted since the last ui_error_capture_begin(), so a caller can
+   tell whether the code it ran reported an error. */
+static int ui_error_capture_messages = 0;
+
 static int
 print_error_to_stderr( ui_error_level severity, const char *message );
 static int
@@ -116,6 +126,15 @@ ui_verror_internal( ui_error_level severity, const char *format, va_list ap,
 
   vsnprintf( message, MESSAGE_MAX_LENGTH, format, ap );
 
+  if( ui_error_capture_callback ) {
+    char line[ MESSAGE_MAX_LENGTH + 1 ];
+
+    ui_error_capture_messages++;
+    snprintf( line, sizeof( line ), "%s\n", message );
+    ui_error_capture_callback( line, ui_error_capture_user );
+    return 0;
+  }
+
   /* Skip the message if the same message was displayed recently */
   if( frames_since_last_message < 50 && !strcmp( message, last_message ) ) {
     frames_since_last_message = 0;
@@ -138,6 +157,27 @@ ui_verror_internal( ui_error_level severity, const char *format, va_list ap,
   }
 
   return 0;
+}
+
+void
+ui_error_capture_begin( ui_error_capture_fn callback, void *user )
+{
+  ui_error_capture_callback = callback;
+  ui_error_capture_user = user;
+  ui_error_capture_messages = 0;
+}
+
+void
+ui_error_capture_end( void )
+{
+  ui_error_capture_callback = NULL;
+  ui_error_capture_user = NULL;
+}
+
+int
+ui_error_capture_had_error( void )
+{
+  return ui_error_capture_messages > 0;
 }
 
 ui_confirm_save_t
