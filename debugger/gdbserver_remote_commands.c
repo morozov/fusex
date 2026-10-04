@@ -278,7 +278,9 @@ static void send_command_output(const char *text, void *user GCC_UNUSED)
 static uint8_t action_debugger_eval(const void *data, void *response)
 {
     ui_error_capture_begin(send_command_output, NULL);
+    debugger_output_capture_begin(send_command_output, NULL);
     debugger_command_evaluate((const char *)data);
+    debugger_output_capture_end();
     ui_error_capture_end();
     *(int *)response = ui_error_capture_had_error();
 

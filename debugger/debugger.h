@@ -31,6 +31,7 @@
 #include <glib.h>
 #endif				/* #ifdef HAVE_LIB_GLIB */
 
+#include "compat.h"
 #include "libspectrum.h"
 
 #include "breakpoint.h"
@@ -72,6 +73,14 @@ libspectrum_word debugger_search_instruction( libspectrum_word address,
 
 /* Evaluate a debugger command */
 void debugger_command_evaluate( const char *command );
+
+/* Write a debugger command's output */
+void debugger_output( const char *format, ... ) GCC_PRINTF( 1, 2 );
+
+/* Divert debugger_output() to a callback */
+typedef void (*debugger_output_fn)( const char *text, void *user );
+void debugger_output_capture_begin( debugger_output_fn callback, void *user );
+void debugger_output_capture_end( void );
 
 /* Get a deparsed expression */
 int debugger_expression_deparse( char *buffer, size_t length,

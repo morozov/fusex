@@ -187,7 +187,7 @@ command:   BASE number { debugger_output_base = $2; }
 	   }
 	 | NEXT	    { debugger_next(); }
 	 | DEBUGGER_OUT number NUMBER { debugger_port_write( $2, $3 ); }
-	 | DEBUGGER_PRINT number { printf( "0x%x\n", $2 ); }
+	 | DEBUGGER_PRINT number { debugger_output( "0x%x\n", $2 ); }
 	 | SET NUMBER number { debugger_poke( $2, $3 ); }
 	 | SET VARIABLE number { debugger_variable_set( $2, $3 ); }
          | SET STRING ':' STRING number { debugger_system_variable_set( $2, $4, $5 ); }
