@@ -3,6 +3,7 @@
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
 #include "debugger.h"
+#include "ui/ui.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -292,11 +293,21 @@ const struct remote_command_entry_t remote_commands[] = {
     { NULL, NULL }
 };
 
+/* Sends text to the client as console output. Runs on the emulator thread
+   while the network thread waits for the command to finish. */
+static void send_command_output(const char *text, void *user GCC_UNUSED)
+{
+    gdbserver_send_remote_console_output(text);
+}
+
 /* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
-   data is the command string. */
+   data is the command string. Any ui_error() text emitted during evaluation
+   is sent to the client as it is produced. */
 static uint8_t action_passthrough_eval(const void *data, void *response GCC_UNUSED)
 {
+    ui_error_capture_begin(send_command_output, NULL);
     debugger_command_evaluate((const char *)data);
+    ui_error_capture_end();
 
     return 0;
 }
@@ -313,5 +324,7 @@ uint8_t remote_command_passthrough(const char *command)
     if (!gdbserver_execute_on_main_thread(action_passthrough_eval, command, NULL))
         return 1;
 
-    return 0;
+    /* A command that failed to parse or evaluate emits ui_error; report it as
+       an RSP error so the client can tell success from failure. */
+    return ui_error_capture_had_error() ? 1 : 0;
 }
