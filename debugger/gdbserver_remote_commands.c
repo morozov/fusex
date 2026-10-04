@@ -301,12 +301,14 @@ static void send_command_output(const char *text, void *user GCC_UNUSED)
 }
 
 /* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
-   data is the command string. Any ui_error() text emitted during evaluation
-   is sent to the client as it is produced. */
+   data is the command string. The command's output and any ui_error() text
+   emitted during evaluation are sent to the client as they are produced. */
 static uint8_t action_passthrough_eval(const void *data, void *response GCC_UNUSED)
 {
     ui_error_capture_begin(send_command_output, NULL);
+    debugger_output_capture_begin(send_command_output, NULL);
     debugger_command_evaluate((const char *)data);
+    debugger_output_capture_end();
     ui_error_capture_end();
 
     return 0;
