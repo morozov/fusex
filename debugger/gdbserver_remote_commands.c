@@ -2,12 +2,19 @@
 
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
+#include "debugger.h"
+#include "ui/ui.h"
 
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#define PASSTHROUGH_OUTPUT_SIZE 2048
 
 #include "fuse.h"
 #include "libspectrum.h"
@@ -37,6 +44,16 @@ static uint8_t remote_command_help( const char *args GCC_UNUSED )
         gdbserver_send_remote_console_output("\n");
     }
 
+    gdbserver_send_remote_console_output(
+        "Any other command is dispatched to the Fuse internal debugger "
+        "(see monitor.md):\n"
+        "  break [addr] [if cond]      port-, memory-, time-, event-watch\n"
+        "  clear / delete / condition  manage breakpoints\n"
+        "  set addr value              poke memory; set $var value\n"
+        "  out port value              write to I/O port\n"
+        "  finish / next / step        execution control\n"
+        "Addresses accept absolute hex or 'source:page:offset' (RAM:5:0, "
+        "ROM:0:0x38, etc.).\n");
     return 0;
 }
 
@@ -280,3 +297,87 @@ const struct remote_command_entry_t remote_commands[] = {
 #endif
     { NULL, NULL }
 };
+
+/* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
+   data is the command string; response is a char[PASSTHROUGH_OUTPUT_SIZE]
+   buffer that receives the command's output: ui_error() text plus anything the
+   command writes to stdout (e.g. `print`, which uses printf). */
+static uint8_t action_passthrough_eval(const void *data, void *response)
+{
+    const char *command = (const char *)data;
+    char *output = (char *)response;
+#ifndef WIN32
+    int saved_stdout = -1;
+    int pipefd[2] = { -1, -1 };
+
+    /* Redirect stdout to a pipe for the duration of the evaluation. Read
+       commands such as `print` write their result with printf, which the
+       ui_error capture below does not intercept. (Disassembly goes to the GUI,
+       not stdout, and remains a client-side concern.) */
+    fflush(stdout);
+    if (pipe(pipefd) == 0)
+    {
+        saved_stdout = dup(STDOUT_FILENO);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+    }
+#endif
+
+    ui_error_capture_begin(output, PASSTHROUGH_OUTPUT_SIZE);
+    debugger_command_evaluate(command);
+    ui_error_capture_end();
+
+#ifndef WIN32
+    if (saved_stdout != -1)
+    {
+        size_t len = strlen(output);
+        char buf[256];
+        ssize_t n;
+
+        fflush(stdout);
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
+
+        /* Append the captured stdout after any ui_error text. The read end is
+           non-blocking so an empty pipe returns immediately. */
+        fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+        while (len + 1 < PASSTHROUGH_OUTPUT_SIZE &&
+               (n = read(pipefd[0], buf, sizeof(buf))) > 0)
+        {
+            size_t take = (size_t)n;
+            if (take > PASSTHROUGH_OUTPUT_SIZE - 1 - len)
+                take = PASSTHROUGH_OUTPUT_SIZE - 1 - len;
+            memcpy(output + len, buf, take);
+            len += take;
+        }
+        output[len] = '\0';
+        close(pipefd[0]);
+    }
+#endif
+
+    return 0;
+}
+
+uint8_t remote_command_passthrough(const char *command)
+{
+    char output[PASSTHROUGH_OUTPUT_SIZE];
+
+    if (!command || !*command)
+        return 1;
+
+    output[0] = '\0';
+
+    /* Serialize against the emulator thread; debugger state (breakpoints,
+       memory, registers) must not mutate while emulation is mid-instruction.
+       Requires the stub to be trapped, which is the normal state when an
+       agent is driving the gdbserver. */
+    if (!gdbserver_execute_on_main_thread(action_passthrough_eval, command, output))
+        return 1;
+
+    if (output[0])
+        gdbserver_send_remote_console_output(output);
+
+    /* A command that failed to parse or evaluate emits ui_error; report it as
+       an RSP error so the client can tell success from failure. */
+    return ui_error_capture_had_error() ? 1 : 0;
+}

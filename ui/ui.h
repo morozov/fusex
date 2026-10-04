@@ -69,6 +69,16 @@ int ui_verror( ui_error_level severity, const char *format, va_list ap )
      GCC_PRINTF( 2, 0 );
 void ui_error_frame( void );
 
+/* Divert ui_error() output to a caller-supplied buffer instead of the UI's
+   normal error path (e.g. NSAlert), so a caller can return the messages of
+   code such as debugger_command_evaluate as text. The buffer is appended to,
+   one message per line, until full; subsequent messages are dropped silently.
+   ui_error_capture_end() restores the normal path. */
+void ui_error_capture_begin( char *buf, size_t size );
+void ui_error_capture_end( void );
+/* Whether any message was diverted since the last ui_error_capture_begin(). */
+int ui_error_capture_had_error( void );
+
 /* Callbacks used by the debugger */
 int ui_debugger_activate( void );
 int ui_debugger_deactivate( int interruptable );
