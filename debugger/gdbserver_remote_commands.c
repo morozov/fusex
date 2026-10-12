@@ -2,6 +2,8 @@
 
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
+#include "debugger.h"
+#include "ui/ui.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -37,6 +39,16 @@ static uint8_t remote_command_help( const char *args GCC_UNUSED )
         gdbserver_send_remote_console_output("\n");
     }
 
+    gdbserver_send_remote_console_output(
+        "Any other command is dispatched to the Fuse internal debugger "
+        "(see monitor.md):\n"
+        "  break [addr] [if cond]      port-, memory-, time-, event-watch\n"
+        "  clear / delete / condition  manage breakpoints\n"
+        "  set addr value              poke memory; set $var value\n"
+        "  out port value              write to I/O port\n"
+        "  finish / next / step        execution control\n"
+        "Addresses accept absolute hex or 'source:page:offset' (RAM:5:0, "
+        "ROM:0:0x38, etc.).\n");
     return 0;
 }
 
@@ -280,3 +292,41 @@ const struct remote_command_entry_t remote_commands[] = {
 #endif
     { NULL, NULL }
 };
+
+/* Sends text to the client as console output. Runs on the emulator thread
+   while the network thread waits for the command to finish. */
+static void send_command_output(const char *text, void *user GCC_UNUSED)
+{
+    gdbserver_send_remote_console_output(text);
+}
+
+/* Runs on the emulator main thread via gdbserver_execute_on_main_thread().
+   data is the command string. The command's output and any ui_error() text
+   emitted during evaluation are sent to the client as they are produced. */
+static uint8_t action_passthrough_eval(const void *data, void *response GCC_UNUSED)
+{
+    ui_error_capture_begin(send_command_output, NULL);
+    debugger_output_capture_begin(send_command_output, NULL);
+    debugger_command_evaluate((const char *)data);
+    debugger_output_capture_end();
+    ui_error_capture_end();
+
+    return 0;
+}
+
+uint8_t remote_command_passthrough(const char *command)
+{
+    if (!command || !*command)
+        return 1;
+
+    /* Serialize against the emulator thread; debugger state (breakpoints,
+       memory, registers) must not mutate while emulation is mid-instruction.
+       Requires the stub to be trapped, which is the normal state when an
+       agent is driving the gdbserver. */
+    if (!gdbserver_execute_on_main_thread(action_passthrough_eval, command, NULL))
+        return 1;
+
+    /* A command that failed to parse or evaluate emits ui_error; report it as
+       an RSP error so the client can tell success from failure. */
+    return ui_error_capture_had_error() ? 1 : 0;
+}
