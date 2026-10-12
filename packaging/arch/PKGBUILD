@@ -1,7 +1,7 @@
 # Maintainer: Sergei Morozov <morozovby@gmail.com>
 
 pkgname=fusex
-pkgver=1.9.2.fusex.0.1.r53.gec38ed63
+pkgver=1.10.0.fusex.0.2.r25.gb69fe0c7
 pkgrel=1
 pkgdesc="ZX Spectrum emulator: the speccytools fork of Fuse, with the GTK 3 UI and libfusex"
 arch=('x86_64')
