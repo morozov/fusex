@@ -43,8 +43,8 @@ install-win32: all
 	cp $(top_srcdir)/lib/*.scr $(DESTDIR)/lib
 	test "$(UI)" != "sdl" -a "$(UI)" != "sdl2" || cp $(top_builddir)/ui/widget/fuse.font $(DESTDIR)/ui/widget
 #	Copy fuse executable (we should manually copy the required libraries)
-	cp $(top_builddir)/.libs/fuse$(EXEEXT) $(DESTDIR) || \
-	cp $(top_builddir)/fuse$(EXEEXT) $(DESTDIR)
+	cp $(top_builddir)/.libs/fusex$(EXEEXT) $(DESTDIR) || \
+	cp $(top_builddir)/fusex$(EXEEXT) $(DESTDIR)
 #	Get text files
 	for file in AUTHORS ChangeLog COPYING README; \
 	  do cp "$(top_srcdir)/$$file" "$(DESTDIR)/$$file.txt"; \
@@ -64,17 +64,17 @@ install-win32: all
 	mv "$(DESTDIR)/LICENSES.txt.tmp" "$(DESTDIR)/LICENSES.txt"
 #	Get manuals
 	if test -n "$(GROFF)"; then \
-	  sed ':a;N;$$!ba;s/\.PP\n\.TS/\.bp\n&/g' $(top_srcdir)/man/fuse.1 | \
+	  sed ':a;N;$$!ba;s/\.PP\n\.TS/\.bp\n&/g' $(top_srcdir)/man/fusex.1 | \
 	  $(GROFF) -t -Thtml -man -P -I -P manual > $(DESTDIR)/fuse.html; \
 	elif test -n "$(MAN2HTML)"; then \
-	  $(MAN2HTML) -r $(top_srcdir)/man/fuse.1 | sed '1d' > $(DESTDIR)/fuse.html; \
+	  $(MAN2HTML) -r $(top_srcdir)/man/fusex.1 | sed '1d' > $(DESTDIR)/fuse.html; \
 	fi
 	-mv manual*.png $(DESTDIR);
 #	Convert to DOS line endings
 	test -z "$(UNIX2DOS)" || find $(DESTDIR) -type f \( -name "*.txt" -or -name "*.html" -or -name "*.copyright" \) -exec $(UNIX2DOS) {} \;
 
 install-win32-strip: install-win32
-	test -z "$(STRIP)" || $(STRIP) $(DESTDIR)/fuse$(EXEEXT)
+	test -z "$(STRIP)" || $(STRIP) $(DESTDIR)/fusex$(EXEEXT)
 
 # Build local 3rdparty tree (MSYS2) if missing — provides DLLs for dist-win32-*.
 3rdparty-dist:

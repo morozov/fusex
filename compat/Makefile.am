@@ -23,16 +23,16 @@
 noinst_HEADERS += compat/getopt.h
 
 if COMPAT_DIRNAME
-fuse_SOURCES += compat/dirname.c
+fusex_SOURCES += compat/dirname.c
 endif
 
 if COMPAT_GETOPT
-fuse_SOURCES += compat/getopt.c compat/getopt1.c
+fusex_SOURCES += compat/getopt.c compat/getopt1.c
 endif
 
 ## Amiga routines
 if COMPAT_AMIGA
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/amiga/osname.c \
@@ -43,7 +43,7 @@ endif
 
 ## Linux routines
 if COMPAT_LINUX
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/unix/osname.c \
@@ -53,13 +53,13 @@ fuse_SOURCES += \
                 compat/unix/monotonic.c
 
 if HAVE_SOCKETS
-fuse_SOURCES += compat/unix/socket.c
+fusex_SOURCES += compat/unix/socket.c
 endif
 endif
 
 ## Morphos routines
 if COMPAT_MORPHOS
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/morphos/osname.c \
@@ -70,7 +70,7 @@ endif
 
 ## Unix routines
 if COMPAT_UNIX
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/unix/osname.c \
@@ -80,13 +80,13 @@ fuse_SOURCES += \
                 compat/unix/monotonic.c
 
 if HAVE_SOCKETS
-fuse_SOURCES += compat/unix/socket.c
+fusex_SOURCES += compat/unix/socket.c
 endif
 endif
 
 ## Wii routines
 if COMPAT_WII
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/wii/osname.c \
@@ -97,7 +97,7 @@ endif
 
 ## Windows routines
 if COMPAT_WIN32
-fuse_SOURCES += \
+fusex_SOURCES += \
                 compat/unix/dir.c \
                 compat/unix/file.c \
                 compat/win32/osname.c \
@@ -106,11 +106,11 @@ fuse_SOURCES += \
                 compat/win32/monotonic.c
 
 if HAVE_SOCKETS
-fuse_SOURCES += compat/win32/socket.c
+fusex_SOURCES += compat/win32/socket.c
 endif
 endif
 
 ## SpeccyBoot routines
 if HAVE_TUNTAP
-fuse_SOURCES += compat/unix/tuntap.c
+fusex_SOURCES += compat/unix/tuntap.c
 endif

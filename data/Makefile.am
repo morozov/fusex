@@ -114,7 +114,7 @@ endif
 if BASH_COMPLETION
 
 bashcompletiondir = $(BASH_COMPLETION_DIR)
-dist_bashcompletion_DATA = data/shell-completion/bash/fuse
+dist_bashcompletion_DATA = data/shell-completion/bash/fusex
 
 endif
 
