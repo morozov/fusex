@@ -1,0 +1,134 @@
+# Maintainer: Sergei Morozov <morozovby@gmail.com>
+
+pkgname=fusex
+pkgver=1.10.0.fusex.0.2.r25.gcfad7fa8
+pkgrel=1
+pkgdesc="ZX Spectrum emulator: the speccytools fork of Fuse, with the GTK 3 UI and libfusex"
+arch=('x86_64')
+url="https://github.com/speccytools/fusex"
+license=('GPL-2.0-or-later')
+depends=('gtk3' 'glib2' 'libxml2' 'libpng' 'zlib' 'bzip2' 'audiofile' 'alsa-lib')
+makedepends=('git' 'autoconf' 'automake' 'libtool' 'pkgconf' 'perl' 'cmake')
+provides=('libfusex.so')
+conflicts=('fuse-emulator')
+
+# The libfusex link relinks the program objects into a shared object by hand
+# (ui/null/Makefile.am all-local); LTO objects do not survive that.
+options=('!lto')
+
+# Packaged from the checkout this PKGBUILD lives in, at whatever branch is
+# checked out there. Override with FUSEX_REPO=/path/to/fusex makepkg.
+_repo="${FUSEX_REPO:-$(cd "${startdir:-.}/../.." && pwd)}"
+
+source=("$pkgname::git+file://$_repo")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+  cd "$srcdir/$pkgname"
+
+  local _module
+  for _module in libspectrum mbedtls libssh2; do
+    git config "submodule.3rdparty/$_module.url" "$_repo/3rdparty/$_module"
+  done
+  git -c protocol.file.allow=always submodule update --init 3rdparty/libspectrum
+  git -c protocol.file.allow=always submodule update --init --recursive \
+    3rdparty/mbedtls 3rdparty/libssh2
+
+  ./autogen.sh
+  cd 3rdparty/libspectrum && ./autogen.sh
+}
+
+build() {
+  # configure finds Spectranet's mbedTLS and libssh2 only in 3rdparty/dist, so
+  # the GTK build takes all of its libraries from there.
+  local _full="$srcdir/$pkgname/3rdparty/dist"
+  local _libfusex="$srcdir/dist-libfusex"
+
+  # Both builds absorb libspectrum as a PIC archive, so the package carries no
+  # libspectrum at all. GTK requires a libspectrum on real GLib; libfusex is
+  # built against one on its GLib replacement, as .github/workflows/libfusex.yml
+  # builds it.
+  _libspectrum full "$_full"
+  _libspectrum libfusex "$_libfusex" --with-fake-glib
+
+  _mbedtls "$_full"
+  _libssh2 "$_full"
+
+  _fusex gtk "$_full" --with-gtk \
+                      --enable-desktop-integration \
+                      --with-bash-completion-dir=/usr/share/bash-completion/completions
+
+  # Any null-UI build also produces libfusex.so as a side effect of all-local.
+  # --without-pthread leaves Spectranet out of it, as libfusex.yml does.
+  _fusex null "$_libfusex" --with-null-ui --without-pthread \
+                           --with-audio-driver=null
+}
+
+_libspectrum() {
+  local _name=$1 _prefix=$2; shift 2
+  mkdir -p "$srcdir/libspectrum-$_name"
+  cd "$srcdir/libspectrum-$_name"
+  "$srcdir/$pkgname/3rdparty/libspectrum/configure" \
+    --prefix="$_prefix" \
+    --disable-shared --with-pic --without-libgcrypt "$@"
+  make
+  make install
+}
+
+_mbedtls() {
+  local _prefix=$1
+  cd "$srcdir/$pkgname/3rdparty/mbedtls/src"
+  make lib
+  mkdir -p "$_prefix/include" "$_prefix/lib"
+  cp -r include/mbedtls include/psa "$_prefix/include/"
+  cp library/libmbedtls.a library/libmbedx509.a library/libmbedcrypto.a \
+     "$_prefix/lib/"
+}
+
+_libssh2() {
+  local _prefix=$1
+  cmake -S "$srcdir/$pkgname/3rdparty/libssh2/src" -B "$srcdir/libssh2-build" \
+        -DCMAKE_INSTALL_PREFIX="$_prefix" \
+        -DCMAKE_BUILD_TYPE=None \
+        -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON \
+        -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
+        -DCRYPTO_BACKEND=mbedTLS \
+        -DMBEDTLS_INCLUDE_DIR="$_prefix/include" \
+        -DMBEDCRYPTO_LIBRARY="$_prefix/lib/libmbedcrypto.a"
+  cmake --build "$srcdir/libssh2-build"
+  cmake --install "$srcdir/libssh2-build"
+}
+
+_fusex() {
+  local _ui=$1 _prefix=$2; shift 2
+  mkdir -p "$srcdir/$pkgname/build-$_ui"
+  cd "$srcdir/$pkgname/build-$_ui"
+  # configure emits -L/usr/lib ahead of the pkg-config path, so a library of the
+  # same name installed on the build host would otherwise win the search.
+  PKG_CONFIG_PATH="$_prefix/lib/pkgconfig" \
+  CPPFLAGS="-I$_prefix/include${CPPFLAGS:+ $CPPFLAGS}" \
+  LDFLAGS="-L$_prefix/lib${LDFLAGS:+ $LDFLAGS}" \
+    ../configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var "$@"
+  make
+}
+
+check() {
+  cd "$srcdir/$pkgname/build-null"
+  # check-local links roms/ into the build dir but not the lib/tests fixtures
+  # the unit tests open relative to the working directory.
+  ln -sfn ../lib lib
+  make check
+}
+
+package() {
+  make -C "$srcdir/$pkgname/build-gtk" DESTDIR="$pkgdir" install
+
+  # libfusex has no install rule of its own.
+  install -Dm755 "$srcdir/$pkgname/build-null/libfusex.so" \
+                 "$pkgdir/usr/lib/libfusex.so"
+}
