@@ -20,7 +20,7 @@
 ##
 ## E-mail: philip-fuse@shadowmagic.org.uk
 
-fuse_SOURCES += unittests/helpers.c
+fusex_SOURCES += unittests/helpers.c
 noinst_HEADERS += unittests/helpers.h
 
 # SDK-specific cooperative wait test; see hacking/emscripten.md for Node usage.
@@ -185,7 +185,7 @@ endif
 
 if UI_NULL
 
-fuse_SOURCES += unittests/unittests.c
+fusex_SOURCES += unittests/unittests.c
 noinst_HEADERS += unittests/unittests.h
 
 ## Standalone internal test programs
@@ -211,7 +211,7 @@ AUDIO_TEST_OBJECTS = unittests/audio-cut-0.$(OBJEXT) \
                     unittests/audio-cut-1.$(OBJEXT)
 CLEANFILES += $(AUDIO_TEST_BINARIES) $(AUDIO_TEST_OBJECTS)
 
-$(AUDIO_TEST_OBJECTS): $(srcdir)/sound.c $(fuse_OBJECTS)
+$(AUDIO_TEST_OBJECTS): $(srcdir)/sound.c $(fusex_OBJECTS)
 	$(AM_V_CC)interval=$@; interval=$${interval#unittests/audio-cut-}; \
 	  interval=$${interval%.$(OBJEXT)}; \
 	  $(COMPILE) -DFUSE_SOUND_TEST_INTERVAL=$$interval -c -o $@ $(srcdir)/sound.c
@@ -223,17 +223,17 @@ unittests/fuse-audio-8750: unittests/audio-cut-8750.$(OBJEXT)
 unittests/fuse-audio-997: unittests/audio-cut-997.$(OBJEXT)
 unittests/fuse-audio-1: unittests/audio-cut-1.$(OBJEXT)
 
-$(AUDIO_TEST_BINARIES): $(fuse_OBJECTS) $(fuse_DEPENDENCIES)
-	$(AM_V_CCLD)objects=; for object in $(fuse_OBJECTS); do \
+$(AUDIO_TEST_BINARIES): $(fusex_OBJECTS) $(fusex_DEPENDENCIES)
+	$(AM_V_CCLD)objects=; for object in $(fusex_OBJECTS); do \
 	  case $$object in sound.$(OBJEXT)) ;; \
 	    *) objects="$$objects $$object" ;; esac; \
 	  done; \
 	  interval=$@; interval=$${interval#unittests/fuse-audio-}; \
-	  $(fuse_LINK) $$objects unittests/audio-cut-$$interval.$(OBJEXT) $(fuse_LDADD) $(LIBS)
+	  $(fusex_LINK) $$objects unittests/audio-cut-$$interval.$(OBJEXT) $(fusex_LDADD) $(LIBS)
 
-check-sound-engine-equivalence: fuse$(EXEEXT) $(AUDIO_TEST_BINARIES)
+check-sound-engine-equivalence: fusex$(EXEEXT) $(AUDIO_TEST_BINARIES)
 	python3 $(srcdir)/unittests/audio-frame-equivalence.py \
-	  ./unittests/fuse-audio-0 ./fuse$(EXEEXT) --interval-builds \
+	  ./unittests/fuse-audio-0 ./fusex$(EXEEXT) --interval-builds \
 	  ./unittests/fuse-audio-35000 ./unittests/fuse-audio-17500 \
 	  ./unittests/fuse-audio-8750 ./unittests/fuse-audio-997 \
 	  ./unittests/fuse-audio-1

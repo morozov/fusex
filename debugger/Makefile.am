@@ -20,7 +20,7 @@
 ##
 ## E-mail: philip-fuse@shadowmagic.org.uk
 
-fuse_SOURCES += \
+fusex_SOURCES += \
                 debugger/breakpoint.c \
                 debugger/command.c \
                 debugger/commandl.l \
@@ -33,19 +33,19 @@ fuse_SOURCES += \
                 debugger/variable.c
 
 if BUILD_GDBSERVER
-fuse_SOURCES += \
+fusex_SOURCES += \
                 debugger/gdbserver.c \
                 debugger/gdbserver_remote_commands.c \
                 debugger/gdbserver_utils.c \
                 debugger/packets.c
 
 if BUILD_SPECTRANET
-fuse_SOURCES += \
+fusex_SOURCES += \
                 debugger/vfile.c \
                 debugger/vfile_ext.c
 endif
 else
-fuse_SOURCES += debugger/gdbserver_stub.c
+fusex_SOURCES += debugger/gdbserver_stub.c
 endif
 
 debugger/commandl.c: debugger/commandy.c

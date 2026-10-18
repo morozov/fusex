@@ -22,11 +22,11 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-bin_PROGRAMS = fuse
+bin_PROGRAMS = fusex
 
 noinst_PROGRAMS =
 
-fuse_SOURCES = display.c \
+fusex_SOURCES = display.c \
 	display_border.c \
 	display_dirty.c \
 	display_internal.h \
@@ -73,7 +73,7 @@ fuse_SOURCES = display.c \
 	utils.c \
 	utils_string.c
 
-fuse_LDADD = \
+fusex_LDADD = \
              $(PTHREAD_LIBS) \
              $(LIBSPECTRUM_LIBS) \
              $(GTK_LIBS) \
@@ -83,19 +83,19 @@ fuse_LDADD = \
              $(XML_LIBS)
 
 if BUILD_SPECTRANET
-fuse_LDADD += $(LIBSSH2_LIBS) $(MBEDTLS_LIBS)
+fusex_LDADD += $(LIBSSH2_LIBS) $(MBEDTLS_LIBS)
 endif
 
 if USE_SDL2
-fuse_LDADD += $(SDL2_LIBS)
+fusex_LDADD += $(SDL2_LIBS)
 endif
 
-fuse_DEPENDENCIES =
+fusex_DEPENDENCIES =
 
 if EMSCRIPTEN
-fuse_LDFLAGS = -sUSE_SDL=2 -sASYNCIFY
-fuse_LDFLAGS += --preload-file emscripten-data@/
-fuse_DEPENDENCIES += emscripten-data.stamp
+fusex_LDFLAGS = -sUSE_SDL=2 -sASYNCIFY
+fusex_LDFLAGS += --preload-file emscripten-data@/
+fusex_DEPENDENCIES += emscripten-data.stamp
 
 emscripten-data.stamp: $(ROMS) $(lib_files) ui/widget/fuse.font
 	$(AM_V_GEN)rm -rf emscripten-data
@@ -110,7 +110,7 @@ clean-local:
 	-rm -rf emscripten-data emscripten-data.stamp
 endif
 
-EXTRA_fuse_SOURCES =
+EXTRA_fusex_SOURCES =
 
 BUILT_SOURCES = options.h settings.c settings.h \
 		debugger/commandy.c \
@@ -241,10 +241,10 @@ check-metrics:
 ## Resources for Windows executables
 if COMPAT_WIN32
 
-fuse_LDFLAGS = -mwindows
-fuse_SOURCES += windres.rc
-fuse_LDADD += -lcomctl32 -lwinmm -lshell32 $(WINSPARKLE_LIBS) windres.o
-fuse_DEPENDENCIES += windres.o
+fusex_LDFLAGS = -mwindows
+fusex_SOURCES += windres.rc
+fusex_LDADD += -lcomctl32 -lwinmm -lshell32 $(WINSPARKLE_LIBS) windres.o
+fusex_DEPENDENCIES += windres.o
 AM_CPPFLAGS += $(WINSPARKLE_CFLAGS)
 
 windres.o: windres.rc data/win32/winfuse.ico data/win32/fuse.manifest $(ui_win32_res)
@@ -282,9 +282,9 @@ include unittests/Makefile.am
 include z80/Makefile.am
 
 if UI_NULL
-check-local: check-widget-utf8 $(AUDIO_CHECK_TARGETS) fuse unittests/displaytest unittests/sdl2displaytest unittests/sdl2scalerstatetest unittests/sdl2joysticktest unittests/sdl2mousetest unittests/palcompositetest unittests/scalerexpandtest z80/coretest
+check-local: check-widget-utf8 $(AUDIO_CHECK_TARGETS) fusex unittests/displaytest unittests/sdl2displaytest unittests/sdl2scalerstatetest unittests/sdl2joysticktest unittests/sdl2mousetest unittests/palcompositetest unittests/scalerexpandtest z80/coretest
 	@test -e $(top_builddir)/roms || ln -sf "$(abs_top_srcdir)/roms" $(top_builddir)/roms
-	FUSE_TEST_SRCDIR="$(abs_top_srcdir)" $(top_builddir)/fuse --unittests
+	FUSE_TEST_SRCDIR="$(abs_top_srcdir)" $(top_builddir)/fusex --unittests
 	$(top_builddir)/unittests/displaytest
 	$(top_builddir)/unittests/sdl2displaytest
 	$(top_builddir)/unittests/sdl2scalerstatetest

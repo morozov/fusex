@@ -17,12 +17,12 @@
 
 if UI_SDL2
 
-fuse_SOURCES += $(ui_sdl2_files)
+fusex_SOURCES += $(ui_sdl2_files)
 
 endif
 
 if SDL2_JOYSTICK
-fuse_SOURCES += ui/sdl2/sdl2_joystick_internal.c
+fusex_SOURCES += ui/sdl2/sdl2_joystick_internal.c
 endif
 
 ui_sdl2_files = \

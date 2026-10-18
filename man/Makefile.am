@@ -20,6 +20,6 @@
 ##
 ## E-mail: philip-fuse@shadowmagic.org.uk
 
-man_MANS = man/fuse.1
+man_MANS = man/fusex.1
 
 EXTRA_DIST += $(man_MANS)
