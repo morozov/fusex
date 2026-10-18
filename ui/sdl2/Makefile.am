@@ -17,7 +17,7 @@
 
 if UI_SDL2
 
-fuse_SOURCES += $(ui_sdl2_files)
+fusex_SOURCES += $(ui_sdl2_files)
 
 endif
 

@@ -64,7 +64,7 @@ SetCompressor lzma
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
-  !define MUI_FINISHPAGE_RUN "$INSTDIR\fuse.exe"
+  !define MUI_FINISHPAGE_RUN "$INSTDIR\fusex.exe"
   !define MUI_FINISHPAGE_NOREBOOTSUPPORT
   !insertmacro MUI_PAGE_FINISH
   
@@ -249,7 +249,7 @@ section "!Fuse Core Files (required)" SecCore
     File "AUTHORS.txt"
     File "ChangeLog.txt"
     File "COPYING.txt"
-    File "fuse.exe"
+    File "fusex.exe"
     File /nonfatal "fuse.html"
     File /nonfatal "LICENSES.txt"
     File /nonfatal "manual*.png"
@@ -286,14 +286,14 @@ section "Start Menu and Desktop links" SecShortcuts
 
     DetailPrint "Creating Shortcuts..."
     CreateDirectory "$SMPROGRAMS\FuseX"
-    CreateShortCut "$SMPROGRAMS\FuseX\FuseX.lnk" "$INSTDIR\fuse.exe"
+    CreateShortCut "$SMPROGRAMS\FuseX\FuseX.lnk" "$INSTDIR\fusex.exe"
     IfFileExists "$INSTDIR\fuse.html" ManualShortcut AfterManual
 ManualShortcut:
     CreateShortCut "$SMPROGRAMS\FuseX\Manual.lnk" "$INSTDIR\fuse.html"
 AfterManual:
     CreateShortCut "$SMPROGRAMS\FuseX\Readme.lnk" "$INSTDIR\README.txt"
     CreateShortCut "$SMPROGRAMS\FuseX\Uninstall.lnk" "$INSTDIR\uninstall.exe"
-    CreateShortCut "$DESKTOP\FuseX.lnk" "$INSTDIR\fuse.exe"
+    CreateShortCut "$DESKTOP\FuseX.lnk" "$INSTDIR\fusex.exe"
 
 sectionEnd
 
@@ -312,15 +312,15 @@ SectionGroupEnd
 
 Section "-Register Application"
   WriteRegStr HKLM "Software\Classes\${PROG_ID}\shell" "" "open"
-  WriteRegStr HKLM "Software\Classes\${PROG_ID}\DefaultIcon" "" "$INSTDIR\fuse.exe,0"
-  WriteRegStr HKLM "Software\Classes\${PROG_ID}\shell\open\command" "" '"$INSTDIR\fuse.exe" "%1"'
-  WriteRegStr HKLM "Software\Classes\Applications\fuse.exe" "NoOpenWith" ""
+  WriteRegStr HKLM "Software\Classes\${PROG_ID}\DefaultIcon" "" "$INSTDIR\fusex.exe,0"
+  WriteRegStr HKLM "Software\Classes\${PROG_ID}\shell\open\command" "" '"$INSTDIR\fusex.exe" "%1"'
+  WriteRegStr HKLM "Software\Classes\Applications\fusex.exe" "NoOpenWith" ""
 
   System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
 SectionEnd
 
 Function CloseRunningFuse
-  ; WinSparkle launches the installer while fuse.exe is still running.
+  ; WinSparkle launches the installer while fusex.exe is still running.
   ; Ask the app to quit, wait briefly, then force-kill if needed so files
   ; are not locked during a silent (/S) upgrade.
   Push $0
@@ -337,7 +337,7 @@ wait_loop:
   StrCmp $0 0 wait_done wait_loop
 force_kill:
   ClearErrors
-  ExecWait '"$SYSDIR\taskkill.exe" /F /IM fuse.exe' $0
+  ExecWait '"$SYSDIR\taskkill.exe" /F /IM fusex.exe' $0
 wait_done:
   Pop $1
   Pop $0
@@ -360,7 +360,7 @@ Function .onInstSuccess
   IfSilent run_fuse
   Goto done
 run_fuse:
-  Exec '"$INSTDIR\fuse.exe"'
+  Exec '"$INSTDIR\fusex.exe"'
 done:
 FunctionEnd
 
@@ -381,7 +381,7 @@ section "uninstall"
 
     ; Unregister Application
     DeleteRegKey HKLM "Software\Classes\${PROG_ID}"
-    DeleteRegKey HKLM "Software\Classes\Applications\fuse.exe"
+    DeleteRegKey HKLM "Software\Classes\Applications\fusex.exe"
 
     System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
 	
@@ -403,7 +403,7 @@ section "uninstall"
     Delete "$INSTDIR\AUTHORS.txt"
     Delete "$INSTDIR\ChangeLog.txt"
     Delete "$INSTDIR\COPYING.txt"
-    Delete "$INSTDIR\fuse.exe"
+    Delete "$INSTDIR\fusex.exe"
     Delete "$INSTDIR\fuse.html"
     Delete "$INSTDIR\LICENSES.txt"
     Delete "$INSTDIR\manual*.png"

@@ -20,12 +20,12 @@
 ##
 ## E-mail: philip-fuse@shadowmagic.org.uk
 
-fuse_SOURCES += unittests/helpers.c
+fusex_SOURCES += unittests/helpers.c
 noinst_HEADERS += unittests/helpers.h
 
 if UI_NULL
 
-fuse_SOURCES += unittests/unittests.c
+fusex_SOURCES += unittests/unittests.c
 noinst_HEADERS += unittests/unittests.h
 
 ## Standalone internal test programs
