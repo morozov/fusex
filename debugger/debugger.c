@@ -23,6 +23,10 @@
 
 #include "config.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "debugger.h"
 #include "gdbserver.h"
 #include "debugger_internals.h"
@@ -51,6 +55,53 @@ int debugger_breakpoint_event;
 
 /* Fuse's exit code */
 static int exit_code = 0;
+
+static _Thread_local debugger_output_fn output_capture_callback = NULL;
+static _Thread_local void *output_capture_user = NULL;
+
+void
+debugger_output_capture_begin( debugger_output_fn callback, void *user )
+{
+  output_capture_callback = callback;
+  output_capture_user = user;
+}
+
+void
+debugger_output_capture_end( void )
+{
+  output_capture_callback = NULL;
+  output_capture_user = NULL;
+}
+
+void
+debugger_output( const char *format, ... )
+{
+  va_list ap, ap_length;
+
+  va_start( ap, format );
+
+  if( output_capture_callback ) {
+    int length;
+
+    va_copy( ap_length, ap );
+    length = vsnprintf( NULL, 0, format, ap_length );
+    va_end( ap_length );
+
+    if( length > 0 ) {
+      char *text = malloc( length + 1 );
+
+      if( text ) {
+        vsnprintf( text, length + 1, format, ap );
+        output_capture_callback( text, output_capture_user );
+        free( text );
+      }
+    }
+  } else {
+    vprintf( format, ap );
+  }
+
+  va_end( ap );
+}
 
 static int
 debugger_init( void *context )
