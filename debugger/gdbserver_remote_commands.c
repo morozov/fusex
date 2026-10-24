@@ -3,6 +3,7 @@
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
 #include "debugger.h"
+#include "ui/ui.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -269,9 +270,17 @@ static uint8_t remote_command_xfs_debug( const char *args )
 }
 #endif
 
-static uint8_t action_debugger_eval(const void *data, void *response GCC_UNUSED)
+static void send_command_output(const char *text, void *user GCC_UNUSED)
 {
+    gdbserver_send_remote_console_output(text);
+}
+
+static uint8_t action_debugger_eval(const void *data, void *response)
+{
+    ui_error_capture_begin(send_command_output, NULL);
     debugger_command_evaluate((const char *)data);
+    ui_error_capture_end();
+    *(int *)response = ui_error_capture_had_error();
 
     /* continue, next and finish leave the debugger active, but emulation
        resumes only when the GDB client says so. Breakpoint checks must not
@@ -283,6 +292,8 @@ static uint8_t action_debugger_eval(const void *data, void *response GCC_UNUSED)
 
 static uint8_t remote_command_debugger( const char *args )
 {
+    int failed = 0;
+
     if( !*args ) {
         gdbserver_send_remote_console_output( "Usage: debugger <command>\n" );
         return 1;
@@ -291,10 +302,10 @@ static uint8_t remote_command_debugger( const char *args )
     /* Debugger state must not change while emulation is mid-instruction, so
        the command runs on the emulator thread. That requires the stub to be
        trapped. */
-    if (!gdbserver_execute_on_main_thread(action_debugger_eval, args, NULL))
+    if (!gdbserver_execute_on_main_thread(action_debugger_eval, args, &failed))
         return 1;
 
-    return 0;
+    return failed;
 }
 
 const struct remote_command_entry_t remote_commands[] = {

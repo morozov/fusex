@@ -69,6 +69,12 @@ int ui_verror( ui_error_level severity, const char *format, va_list ap )
      GCC_PRINTF( 2, 0 );
 void ui_error_frame( void );
 
+/* Divert ui_error() messages to a callback */
+typedef void (*ui_error_capture_fn)( const char *text, void *user );
+void ui_error_capture_begin( ui_error_capture_fn callback, void *user );
+void ui_error_capture_end( void );
+int ui_error_capture_had_error( void );
+
 /* Callbacks used by the debugger */
 int ui_debugger_activate( void );
 int ui_debugger_deactivate( int interruptable );
