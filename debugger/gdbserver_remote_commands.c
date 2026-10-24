@@ -2,6 +2,7 @@
 
 #include "gdbserver_remote_commands.h"
 #include "gdbserver.h"
+#include "debugger.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -268,10 +269,39 @@ static uint8_t remote_command_xfs_debug( const char *args )
 }
 #endif
 
+static uint8_t action_debugger_eval(const void *data, void *response GCC_UNUSED)
+{
+    debugger_command_evaluate((const char *)data);
+
+    /* continue, next and finish leave the debugger active, but emulation
+       resumes only when the GDB client says so. Breakpoint checks must not
+       run while the stub is trapped. */
+    debugger_mode = DEBUGGER_MODE_HALTED;
+
+    return 0;
+}
+
+static uint8_t remote_command_debugger( const char *args )
+{
+    if( !*args ) {
+        gdbserver_send_remote_console_output( "Usage: debugger <command>\n" );
+        return 1;
+    }
+
+    /* Debugger state must not change while emulation is mid-instruction, so
+       the command runs on the emulator thread. That requires the stub to be
+       trapped. */
+    if (!gdbserver_execute_on_main_thread(action_debugger_eval, args, NULL))
+        return 1;
+
+    return 0;
+}
+
 const struct remote_command_entry_t remote_commands[] = {
     { "help", remote_command_help },
     { "reset", remote_command_reset },
     { "dump", remote_command_dump },
+    { "debugger", remote_command_debugger },
     { "spectranet-info", remote_command_spectranet_info },
 #ifdef BUILD_SPECTRANET
     { "spectranet-set-page", remote_command_spectranet_set_page },
