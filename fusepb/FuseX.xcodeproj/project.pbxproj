@@ -428,6 +428,7 @@
 		57F208713CC03B66F5B5304F /* lwip/src/core/ipv4/icmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 0BDC28F98A4B68CC7B1B1537 /* lwip/src/core/ipv4/icmp.c */; settings = {COMPILER_FLAGS = "-std=gnu11"; }; };
 		25C447B674F4B4B63CE08F9D /* lwip/src/core/ipv4/ip4.c in Sources */ = {isa = PBXBuildFile; fileRef = E867FC7A4000F0543707890B /* lwip/src/core/ipv4/ip4.c */; settings = {COMPILER_FLAGS = "-std=gnu11"; }; };
 		6C24774FB239DFA10728C966 /* lwip/src/core/ipv4/ip4_addr.c in Sources */ = {isa = PBXBuildFile; fileRef = 7BE723E9D0E2369812BF04E1 /* lwip/src/core/ipv4/ip4_addr.c */; settings = {COMPILER_FLAGS = "-std=gnu11"; }; };
+		FE1B00130001000000000006 /* fuse.1 in Copy man page */ = {isa = PBXBuildFile; fileRef = FE1B00130001000000000007 /* ../man/fuse.1 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -519,6 +520,17 @@
 			files = (
 				FEC02C952EEF06E4008277BA /* FuseImporter.mdimporter in CopyFiles */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FE1B00130001000000000008 /* Copy man page */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = man/man1;
+			dstSubfolderSpec = 7;
+			files = (
+				FE1B00130001000000000006 /* fuse.1 in Copy man page */,
+			);
+			name = "Copy man page";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1132,6 +1144,7 @@
 		0BDC28F98A4B68CC7B1B1537 /* lwip/src/core/ipv4/icmp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "../3rdparty/lwip/src/core/ipv4/icmp.c"; sourceTree = SOURCE_ROOT; };
 		E867FC7A4000F0543707890B /* lwip/src/core/ipv4/ip4.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "../3rdparty/lwip/src/core/ipv4/ip4.c"; sourceTree = SOURCE_ROOT; };
 		7BE723E9D0E2369812BF04E1 /* lwip/src/core/ipv4/ip4_addr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "../3rdparty/lwip/src/core/ipv4/ip4_addr.c"; sourceTree = SOURCE_ROOT; };
+		FE1B00130001000000000007 /* ../man/fuse.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = ../man/fuse.1; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1423,6 +1436,7 @@
 				384001994B177FFEB8AE6C99 /* udi.icns */,
 				FE0A0205301F000000000001 /* ../roms/spxromfs.bin */,
 				FE0A0206301F000000000001 /* ../roms/spxcontroller.bin */,
+				FE1B00130001000000000007 /* ../man/fuse.1 */,
 			);
 			path = resources;
 			sourceTree = "<group>";
@@ -2181,6 +2195,7 @@
 				B61F459209121DF100C8096C /* Copy Files */,
 				B61F45A109121DF100C8096C /* Copy Files */,
 				B61F45FE09121DF100C8096C /* Resources */,
+				FE1B00130001000000000008 /* Copy man page */,
 				B61F463809121DF100C8096C /* Sources */,
 				B61F469909121DF100C8096C /* Frameworks */,
 				B61F46A309121DF100C8096C /* CopyFiles */,
