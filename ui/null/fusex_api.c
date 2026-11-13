@@ -4,6 +4,7 @@
 
 #include "debugger/debugger.h"
 #include "memory_pages.h"
+#include "spectrum.h"
 #include "ui/ui.h"
 
 #include "fusex_debugger.h"
@@ -76,4 +77,17 @@ void fusex_peek_block(const int addr, const int len, unsigned char *buf )
 {
   for( int i = 0; i < len; i++ )
     buf[i] = readbyte_internal( (libspectrum_word)( ( addr + i ) & 0xffff ) );
+}
+
+int fusex_run_until_break( int max_frames )
+{
+  if( max_frames <= 0 ) return 0;
+  if( debugger_mode == DEBUGGER_MODE_HALTED ) debugger_run();
+  return spectrum_do_frames_until_halt( max_frames );
+}
+
+void fusex_run_to_break( void )
+{
+  if( debugger_mode == DEBUGGER_MODE_HALTED ) debugger_run();
+  spectrum_do_frames_until_halt( -1 );
 }
