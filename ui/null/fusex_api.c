@@ -71,3 +71,9 @@ fusex_debugger_command( const char *command, char *output, const int output_size
   ui_error_capture_end();
   return ui_error_capture_had_error();
 }
+
+void fusex_peek_block(const int addr, const int len, unsigned char *buf )
+{
+  for( int i = 0; i < len; i++ )
+    buf[i] = readbyte_internal( (libspectrum_word)( ( addr + i ) & 0xffff ) );
+}
